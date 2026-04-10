@@ -1,0 +1,263 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🔨 Build (Debug)",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build"],
+      "group": "build",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🚀 Build (Release)",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build", "--release"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🧪 Run All Tests",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["test", "--all"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🧪 Run Tests (Lib Only)",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["test", "--lib"],
+      "group": "test",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🧪 Run Integration Tests",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["test", "--test", "*"],
+      "group": "test",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🧪 Run Doc Tests",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["test", "--doc"],
+      "group": "test",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🧪 Run Specific Test",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["test", "${input:testName}"],
+      "group": "test",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "📋 Check (Fast Compile Check)",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["check"],
+      "group": "build",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🎨 Format Code",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["fmt", "--all"],
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🔍 Check Formatting",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["fmt", "--all", "--", "--check"],
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "📎 Clippy (Linter)",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["clippy", "--all-targets", "--all-features"],
+      "group": "none",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "📎 Clippy (Strict)",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "group": "none",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🧹 Clean Build Artifacts",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["clean"],
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "📦 Install Binary",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["install", "--path", ".", "--force"],
+      "group": "none",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "📚 Generate Documentation",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["doc", "--no-deps", "--open"],
+      "group": "none",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🔄 Update Dependencies",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["update"],
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "✅ Pre-commit Check (Format + Clippy + Tests)",
+      "dependsOn": ["🎨 Format Code", "📎 Clippy (Strict)", "🧪 Run All Tests"],
+      "dependsOrder": "sequence",
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": true
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testName",
+      "type": "promptString",
+      "description": "Enter test name or pattern",
+      "default": ""
+    }
+  ]
+}
