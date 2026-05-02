@@ -1,24 +1,33 @@
 services:
-  openwebui:
+  open-webui:
     image: ghcr.io/open-webui/open-webui:main
-    container_name: openwebui
-    network_mode: host
+    container_name: open-webui
+    restart: always
+    ports:
+      - "3000:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      - WEBUI_AUTH=false
-      - OPENAI_API_BASE_URL=http://localhost:8080/v1
-      - OPENAI_API_KEY=none
-      - PORT=3000
+      # --- Performance & Privacy ---
+      - SCARF_NO_ANALYTICS=true
+      - DO_NOT_TRACK=true
+      - ANONYMIZED_TELEMETRY=false
+      
+      # --- Auth & Session ---
+      - WEBUI_AUTH=False
+      - WEBUI_SECRET_KEY=helloitisme # Change this to any random string for better security
+      
+      # --- Model Connection ---
+      - OPENAI_API_BASE_URL=http://host.docker.internal:8080/v1
+      - OPENAI_API_KEY=dummy_key
     volumes:
-      - openwebui:/app/backend/data
-    restart: unless-stopped
+      # XDG Standard: Config in .config, Data in .local/share
+      - ~/.local/share/open-webui/data:/app/backend/data
 
   watchtower:
     image: containrrr/watchtower
     container_name: watchtower
+    restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 86400 openwebui
-    restart: unless-stopped
-
-volumes:
-  openwebui:
+    command: --interval 86400 open-webui
