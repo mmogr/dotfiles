@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:17
+    container_name: dev-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ${HOME}/.local/share/dev-db/postgres:/var/lib/postgresql/data:U
+
+  mysql:
+    image: docker.io/library/mysql:8.4
+    container_name: dev-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - ${HOME}/.local/share/dev-db/mysql:/var/lib/mysql:U

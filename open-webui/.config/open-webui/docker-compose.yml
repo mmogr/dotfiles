@@ -9,27 +9,17 @@ services:
       - "host.docker.internal:host-gateway"
     env_file:
       - .env
+    labels:
+      - "io.containers.autoupdate=registry"
     environment:
-      # --- Performance & Privacy ---
       - SCARF_NO_ANALYTICS=true
       - DO_NOT_TRACK=true
       - ANONYMIZED_TELEMETRY=false
-      
-      # --- Auth & Session ---
       - WEBUI_AUTH=False
       - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
-      
-      # --- Model Connection ---
-      - OPENAI_API_BASE_URL=http://host.docker.internal:8080/v1
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_BASE_URL=http://host.containers.internal:8080/v1
     volumes:
-      # XDG Standard: Config in .config, Data in .local/share
-      - ${HOME}/.local/share/open-webui/data:/app/backend/data
-
-  watchtower:
-    image: nickfedor/watchtower:latest
-    container_name: watchtower
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 86400 --cleanup open-webui
+      - ${HOME}/.local/share/open-webui/data:/app/backend/data:U
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/kfd:/dev/kfd
