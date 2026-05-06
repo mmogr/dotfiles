@@ -1,0 +1,3 @@
+# lazy-lock.json is intentionally not ignored so plugin versions are reproducible.
+# Ignore lazy.nvim's runtime data directory (downloaded, not config).
+/lua/lazyvim/

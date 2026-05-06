@@ -1,0 +1,3 @@
+-- Add your custom plugins here.
+-- Example (disabled): uncomment to enable a plugin extra from LazyVim.
+-- { import = "lazyvim.plugins.extras.lang.typescript" },

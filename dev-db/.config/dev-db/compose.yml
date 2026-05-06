@@ -5,7 +5,7 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
     volumes:
       - ${HOME}/.local/share/dev-db/postgres:/var/lib/postgresql/data:U
 
@@ -15,6 +15,6 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
     volumes:
       - ${HOME}/.local/share/dev-db/mysql:/var/lib/mysql:U
