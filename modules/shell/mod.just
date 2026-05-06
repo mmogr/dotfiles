@@ -1,4 +1,4 @@
 # Stow the shared shell aliases package
 
 stow:
-    stow -d {{justfile_directory()}} -R shell
+    sh {{justfile_directory()}}/lib/stow-safe.sh {{justfile_directory()}} shell

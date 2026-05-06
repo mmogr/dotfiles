@@ -1,7 +1,7 @@
 # Open WebUI — stow config, create data directories, and initialize secrets
 
 stow:
-    stow -d {{justfile_directory()}} -R open-webui
+    sh {{justfile_directory()}}/lib/stow-safe.sh {{justfile_directory()}} open-webui
 
 dirs:
     mkdir -p "$HOME/.config/open-webui"

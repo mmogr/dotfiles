@@ -9,4 +9,4 @@ install:
 
 # Stow zsh config
 stow:
-    stow -d {{justfile_directory()}} -R zsh
+    sh {{justfile_directory()}}/lib/stow-safe.sh {{justfile_directory()}} zsh

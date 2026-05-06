@@ -29,7 +29,7 @@ require("lazy").setup({
     version = false, -- always use latest git commit
   },
   install = { colorscheme = { "tokyonight", "habamax" } },
-  checker = { enabled = true }, -- automatically check for updates
+  checker = { enabled = true, notify = false }, -- check for updates silently
   performance = {
     rtp = {
       disabled_plugins = {

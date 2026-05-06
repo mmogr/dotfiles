@@ -9,4 +9,4 @@ install:
 
 # Stow fish config
 stow:
-    stow -d {{justfile_directory()}} -R fish
+    sh {{justfile_directory()}}/lib/stow-safe.sh {{justfile_directory()}} fish

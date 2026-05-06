@@ -7,4 +7,4 @@ install:
     $PM neovim lazygit
 
 stow:
-    stow -d {{justfile_directory()}} -R nvim
+    sh {{justfile_directory()}}/lib/stow-safe.sh {{justfile_directory()}} nvim
