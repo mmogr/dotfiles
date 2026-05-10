@@ -63,3 +63,42 @@ backup-defaults:
             mv "$f" "$f.bak"
         fi
     done
+
+# Check that all stow packages are correctly linked and the repo is clean
+check:
+    #!/usr/bin/env sh
+    DOTFILES={{justfile_directory()}}
+    FAILED=0
+
+    # 1. Git cleanliness
+    printf "git status ... "
+    DIRTY=$(cd "$DOTFILES" && git status --short)
+    if [ -z "$DIRTY" ]; then
+        echo "OK (clean)"
+    else
+        echo "DIRTY"
+        cd "$DOTFILES" && git status --short | sed 's/^/  /'
+        FAILED=1
+    fi
+
+    # 2. Stow packages — dry-run restow; any output means something is out of sync
+    for PKG in shell fish zsh bash nvim dev-db open-webui; do
+        printf "stow %-12s ... " "$PKG"
+        OUT=$(cd "$DOTFILES" && stow -n -R "$PKG" 2>&1 || true)
+        if [ -z "$OUT" ]; then
+            echo "OK"
+        else
+            echo "OUT OF SYNC"
+            echo "$OUT" | sed 's/^/  /'
+            FAILED=1
+        fi
+    done
+
+    # Summary
+    echo ""
+    if [ "$FAILED" -eq 0 ]; then
+        echo "All checks passed."
+    else
+        echo "One or more checks failed — run: just stow-all" >&2
+        exit 1
+    fi
