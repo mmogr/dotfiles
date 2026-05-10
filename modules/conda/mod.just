@@ -1,7 +1,41 @@
-# Miniconda — install and initialize for all shells
+# Conda — install and initialize for all shells
+# Primary path (AUR/CachyOS): /opt/miniconda3
+# Fallback path (manual/macOS): ~/.local/share/miniconda3
 
-# Download and silently install Miniconda3 to ~/.local/share/miniconda3
-install:
+# Remove the current conda installation and any conda-injected shell blocks
+purge:
+    #!/usr/bin/env sh
+    set -e
+    # Reverse any conda init blocks injected into shell configs
+    for PREFIX in /opt/miniconda3 "$HOME/.local/share/miniconda3"; do
+        if [ -x "$PREFIX/bin/conda" ]; then
+            echo "Running conda init --reverse for $PREFIX ..."
+            "$PREFIX/bin/conda" init --reverse bash zsh fish || true
+        fi
+    done
+    # Belt-and-suspenders: strip any residual conda blocks from shell configs
+    for RC in "$HOME/.bashrc" "$HOME/.zshrc"; do
+        if [ -f "$RC" ]; then
+            sed -i '/# >>> conda initialize >>>/,/# <<< conda initialize <<</d' "$RC"
+        fi
+    done
+    # Remove install directories
+    rm -rf "$HOME/.local/share/miniconda3"
+    rm -rf "$HOME/.conda"
+    echo "Done. Restart your shell and verify with: which conda"
+
+# Install via AUR using paru (primary — CachyOS/Arch; managed by paru -Syu)
+install-aur:
+    #!/usr/bin/env sh
+    set -e
+    paru -S --noconfirm miniconda3
+    # Prevent base env from hijacking system Python (user-level setting)
+    /opt/miniconda3/bin/conda config --set auto_activate_base false
+    echo "miniconda3 installed to /opt/miniconda3"
+    echo "Run: just conda::init"
+
+# Install manually (non-Arch / macOS fallback) to ~/.local/share/miniconda3
+install-manual:
     #!/usr/bin/env sh
     set -e
     OS=$(uname -s)
@@ -17,7 +51,25 @@ install:
     curl -fsSL "https://repo.anaconda.com/miniconda/$INSTALLER" -o "$TMPFILE"
     bash "$TMPFILE" -b -p "$HOME/.local/share/miniconda3"
     rm "$TMPFILE"
+    "$HOME/.local/share/miniconda3/bin/conda" config --set auto_activate_base false
+    echo "miniconda3 installed to ~/.local/share/miniconda3"
+    echo "Run: just conda::init"
 
-# Initialize conda for bash, zsh, and fish
+# Primary install (calls install-aur); override by calling install-manual directly
+install: install-aur
+
+# Initialize conda hooks for bash, zsh, and fish — detects AUR vs manual prefix
 init:
-    "$HOME/.local/share/miniconda3/bin/conda" init bash zsh fish
+    #!/usr/bin/env sh
+    set -e
+    if [ -x /opt/miniconda3/bin/conda ]; then
+        PREFIX=/opt/miniconda3
+    elif [ -x "$HOME/.local/share/miniconda3/bin/conda" ]; then
+        PREFIX="$HOME/.local/share/miniconda3"
+    else
+        echo "No conda installation found. Run: just conda::install" >&2
+        exit 1
+    fi
+    echo "Initializing conda from $PREFIX ..."
+    "$PREFIX/bin/conda" init bash zsh fish
+    echo "Done. Restart your shell or run: exec \$SHELL"

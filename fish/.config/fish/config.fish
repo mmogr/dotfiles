@@ -1,8 +1,12 @@
 source /usr/share/cachyos-fish-config/cachyos-config.fish
 
-# Conda
-if test -d $HOME/.local/share/miniconda3/bin
-    fish_add_path $HOME/.local/share/miniconda3/bin
+# Conda — source native fish hook for full activate/deactivate support
+# Tries AUR install path (/opt/miniconda3) first, then manual install fallback
+for _conda_prefix in /opt/miniconda3 $HOME/.local/share/miniconda3
+    if test -f $_conda_prefix/etc/fish/conf.d/conda.fish
+        source $_conda_prefix/etc/fish/conf.d/conda.fish
+        break
+    end
 end
 
 # overwrite greeting
