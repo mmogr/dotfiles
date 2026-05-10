@@ -1,0 +1,3 @@
+-- Options are loaded before lazy.nvim starts.
+-- Add custom options here; defaults live in LazyVim:
+-- https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua

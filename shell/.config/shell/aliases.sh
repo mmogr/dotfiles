@@ -1,0 +1,7 @@
+alias webui='cd ~/.config/open-webui && podman-compose'
+alias uiup='podman-compose -f ~/.config/open-webui/docker-compose.yml up -d'
+alias uidown='podman-compose -f ~/.config/open-webui/docker-compose.yml down'
+alias uilog='podman logs -f open-webui'
+alias pgup='podman-compose -f ~/.config/dev-db/compose.yml up -d postgres'
+alias myup='podman-compose -f ~/.config/dev-db/compose.yml up -d mysql'
+alias dbdown='podman-compose -f ~/.config/dev-db/compose.yml stop'
