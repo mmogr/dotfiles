@@ -84,7 +84,7 @@ check:
     # 2. Stow packages — dry-run restow; any output means something is out of sync
     for PKG in shell fish zsh bash nvim dev-db open-webui; do
         printf "stow %-12s ... " "$PKG"
-        OUT=$(cd "$DOTFILES" && stow -n -R "$PKG" 2>&1 || true)
+        OUT=$(cd "$DOTFILES" && stow -n -R "$PKG" 2>&1 | grep -v "^WARNING: in simulation mode" || true)
         if [ -z "$OUT" ]; then
             echo "OK"
         else
