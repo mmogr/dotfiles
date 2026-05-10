@@ -2,28 +2,6 @@
 # Primary path (AUR/CachyOS): /opt/miniconda3
 # Fallback path (manual/macOS): ~/.local/share/miniconda3
 
-# Remove the current conda installation and any conda-injected shell blocks
-purge:
-    #!/usr/bin/env sh
-    set -e
-    # Reverse any conda init blocks injected into shell configs
-    for PREFIX in /opt/miniconda3 "$HOME/.local/share/miniconda3"; do
-        if [ -x "$PREFIX/bin/conda" ]; then
-            echo "Running conda init --reverse for $PREFIX ..."
-            "$PREFIX/bin/conda" init --reverse bash zsh fish || true
-        fi
-    done
-    # Belt-and-suspenders: strip any residual conda blocks from shell configs
-    for RC in "$HOME/.bashrc" "$HOME/.zshrc"; do
-        if [ -f "$RC" ]; then
-            sed -i '/# >>> conda initialize >>>/,/# <<< conda initialize <<</d' "$RC"
-        fi
-    done
-    # Remove install directories
-    rm -rf "$HOME/.local/share/miniconda3"
-    rm -rf "$HOME/.conda"
-    echo "Done. Restart your shell and verify with: which conda"
-
 # Install via AUR using paru (primary — CachyOS/Arch; managed by paru -Syu)
 install-aur:
     #!/usr/bin/env sh
