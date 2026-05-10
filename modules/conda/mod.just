@@ -49,5 +49,5 @@ init:
         exit 1
     fi
     echo "Initializing conda from $PREFIX ..."
-    "$PREFIX/bin/conda" init bash zsh fish
+    "$PREFIX/bin/conda" init bash zsh
     echo "Done. Restart your shell or run: exec \$SHELL"
