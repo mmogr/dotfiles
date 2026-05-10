@@ -1,5 +1,10 @@
 source /usr/share/cachyos-fish-config/cachyos-config.fish
 
+# Conda
+if test -d $HOME/.local/share/miniconda3/bin
+    fish_add_path $HOME/.local/share/miniconda3/bin
+end
+
 # overwrite greeting
 # potentially disabling fastfetch
 #function fish_greeting
