@@ -84,12 +84,13 @@ check:
     # 2. Stow packages — dry-run restow; any output means something is out of sync
     for PKG in shell fish zsh bash nvim dev-db open-webui; do
         printf "stow %-12s ... " "$PKG"
-        OUT=$(cd "$DOTFILES" && stow -n -R "$PKG" 2>&1 | grep -v "^WARNING: in simulation mode" || true)
-        if [ -z "$OUT" ]; then
+        OUT=$(cd "$DOTFILES" && stow -n -R "$PKG" 2>&1 || true)
+        ISSUES=$(printf '%s\n' "$OUT" | grep -E "cannot stow|ERROR" || true)
+        if [ -z "$ISSUES" ]; then
             echo "OK"
         else
             echo "OUT OF SYNC"
-            echo "$OUT" | sed 's/^/  /'
+            echo "$ISSUES" | sed 's/^/  /'
             FAILED=1
         fi
     done

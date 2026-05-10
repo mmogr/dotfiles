@@ -33,10 +33,22 @@ install-manual:
     echo "miniconda3 installed to ~/.local/share/miniconda3"
     echo "Run: just conda::init"
 
-# Primary install (calls install-aur); override by calling install-manual directly
-install: install-aur
+# Primary install — AUR on Arch/CachyOS (paru), manual installer elsewhere
+install:
+    #!/usr/bin/env sh
+    set -e
+    if command -v paru >/dev/null 2>&1; then
+        paru -S --noconfirm miniconda3
+        /opt/miniconda3/bin/conda config --set auto_activate_base false
+        echo "miniconda3 installed to /opt/miniconda3 via AUR"
+    else
+        echo "paru not found — falling back to manual Miniconda installer"
+        just conda::install-manual
+    fi
+    echo "Run: just conda::init"
 
-# Initialize conda hooks for bash, zsh, and fish — detects AUR vs manual prefix
+# Verify the detected conda prefix and confirm auto_activate_base=false
+# Shell hooks (bash/zsh/fish) are managed directly in dotfiles — do NOT run conda init
 init:
     #!/usr/bin/env sh
     set -e
@@ -48,6 +60,7 @@ init:
         echo "No conda installation found. Run: just conda::install" >&2
         exit 1
     fi
-    echo "Initializing conda from $PREFIX ..."
-    "$PREFIX/bin/conda" init bash zsh
+    "$PREFIX/bin/conda" config --set auto_activate_base false
+    echo "conda prefix: $PREFIX"
+    echo "auto_activate_base: false"
     echo "Done. Restart your shell or run: exec \$SHELL"
