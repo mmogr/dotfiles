@@ -309,6 +309,11 @@ do
         vim.cmd 'TSUpdate'
         return
       end
+
+      if name == 'avante.nvim' and vim.fn.executable 'make' == 1 then
+        run_build(name, { 'make' }, ev.data.path)
+        return
+      end
     end,
   })
 end
@@ -538,6 +543,162 @@ do
     })
     vim.cmd 'startinsert'
   end, { desc = '[G]it lazygit' })
+end
+
+-- ============================================================
+-- SECTION 3.8: AI / COPILOT
+-- copilot.lua  — auth + model access (inline completions OFF by default)
+-- CopilotChat  — VS Code Copilot Chat sidebar equivalent
+--
+-- Providers (switch with <leader>cp):
+--   gglib_proxy   gglib proxy on 127.0.0.1:8080 (default — no auth)
+--                 Start with: gglib proxy
+--   copilot       GitHub Copilot (run :Copilot auth on first use)
+--   openai_compat Any other OpenAI-compatible endpoint:
+--                   OPENAI_BASE_URL  (default: http://localhost:8080)
+--                   OPENAI_API_KEY   (default: "ollama" for keyless servers)
+--
+-- Keymaps:
+--   <leader>cc   Open/toggle chat window
+--   <leader>cq   Quick floating ask (no persistent window)
+--   <leader>cp   Pick provider / model
+--   Visual <leader>cc  Ask about selection
+--
+-- First-time GitHub Copilot setup: :Copilot auth
+-- ============================================================
+do
+  -- copilot.lua: auth layer, inline suggestions intentionally OFF
+  vim.pack.add { gh 'zbirenbaum/copilot.lua' }
+  require('copilot').setup {
+    suggestion = { enabled = false },
+    panel     = { enabled = false },
+    filetypes = { ['*'] = true },
+  }
+
+  -- CopilotChat
+  vim.pack.add { gh 'CopilotC-Nvim/CopilotChat.nvim' }
+
+  require('CopilotChat').setup {
+    -- gglib proxy is the default: start with `gglib proxy` in a terminal
+    provider = 'gglib_proxy',
+
+    providers = {
+      -- gglib proxy — local LLM via gglib (127.0.0.1:8080, no auth needed)
+      gglib_proxy = {
+        prepare_input  = require('CopilotChat.config.providers').copilot.prepare_input,
+        prepare_output = require('CopilotChat.config.providers').copilot.prepare_output,
+        get_headers = function()
+          return { ['Content-Type'] = 'application/json' }
+        end,
+        get_models = function(_)
+          -- io.popen (pure Lua) works in CopilotChat's async context; vim.system does not
+          local handle = io.popen('curl -sf http://127.0.0.1:8080/v1/models 2>/dev/null')
+          if not handle then
+            return { { id = 'gglib-default', name = 'gglib-default', streaming = true } }
+          end
+          local stdout = handle:read '*a'
+          handle:close()
+          local ok, data = pcall(vim.json.decode, stdout or '')
+          if ok and data and data.data then
+            return vim.tbl_map(function(m) return { id = m.id, name = m.id, streaming = true } end, data.data)
+          end
+          return { { id = 'gglib-default', name = 'gglib-default', streaming = true } }
+        end,
+        get_url = function() return 'http://127.0.0.1:8080/v1/chat/completions' end,
+      },
+
+      -- Generic OpenAI-compatible endpoint (env-var driven, e.g. remote APIs)
+      -- Uses os.getenv (pure Lua) — vim.env uses VimScript and fails in async context
+      openai_compat = {
+        prepare_input  = require('CopilotChat.config.providers').copilot.prepare_input,
+        prepare_output = require('CopilotChat.config.providers').copilot.prepare_output,
+        get_headers = function()
+          local key = os.getenv('OPENAI_API_KEY') or 'ollama'
+          return {
+            ['Content-Type'] = 'application/json',
+            Authorization    = 'Bearer ' .. key,
+          }
+        end,
+        get_models = function(headers)
+          local base = os.getenv('OPENAI_BASE_URL') or 'http://localhost:8080'
+          local handle = io.popen('curl -sf -H "Authorization: ' .. headers.Authorization .. '" ' .. base .. '/v1/models 2>/dev/null')
+          if not handle then return { { id = 'default', name = 'default', streaming = true } } end
+          local stdout = handle:read '*a'
+          handle:close()
+          local ok, data = pcall(vim.json.decode, stdout or '')
+          if ok and data and data.data then
+            return vim.tbl_map(function(m) return { id = m.id, name = m.id, streaming = true } end, data.data)
+          end
+          return { { id = 'default', name = 'default', streaming = true } }
+        end,
+        get_url = function()
+          return (os.getenv('OPENAI_BASE_URL') or 'http://localhost:8080') .. '/v1/chat/completions'
+        end,
+      },
+    },
+
+    -- Chat window: vertical split on the right, 40% width
+    window = { layout = 'vertical', width = 0.4 },
+  }
+
+  -- Keymaps
+  vim.keymap.set({ 'n', 'v' }, '<leader>cc', '<cmd>CopilotChatToggle<cr>', { desc = '[C]opilot [C]hat toggle' })
+  vim.keymap.set({ 'n', 'v' }, '<leader>cq', function()
+    local input = vim.fn.input 'Quick ask: '
+    if input ~= '' then require('CopilotChat').ask(input) end
+  end, { desc = '[C]opilot [Q]uick ask' })
+  vim.keymap.set('n', '<leader>cp', '<cmd>CopilotChatModel<cr>', { desc = '[C]opilot [P]ick model/provider' })
+end
+
+-- ============================================================
+-- SECTION 3.85: AGENTIC CODING (avante.nvim)
+-- Cursor/VS Code agent-mode equivalent: the model reads files, proposes
+-- inline diffs, you accept/reject hunks — all inside nvim.
+--
+-- Endpoint: gglib proxy at 127.0.0.1:8080 (must be running: gglib proxy)
+-- Model: update `model` below to match whatever gglib has loaded.
+--        Run: curl -sf http://127.0.0.1:8080/v1/models | jq -r '.data[0].id'
+--
+-- Keymaps (avante default <leader>a prefix):
+--   <leader>aa   Ask avante (open sidebar + send prompt)
+--   <leader>ae   Edit with instruction (visual: ask about selection)
+--   <leader>ar   Refresh / regenerate last response
+--   <leader>af   Focus avante input box
+-- Inside diff view: <Tab>/<S-Tab> to cycle hunks, <CR> to accept, <BS> reject
+-- ============================================================
+do
+  -- render-markdown: pretty markdown in avante sidebar (and .md files)
+  vim.pack.add { gh 'MeanderingProgrammer/render-markdown.nvim' }
+  require('render-markdown').setup { file_types = { 'markdown', 'Avante' } }
+
+  -- avante.nvim — requires build step (Rust); runs automatically on install/update
+  vim.pack.add { gh 'yetone/avante.nvim' }
+  require('avante').setup {
+    provider = 'gglib',
+    providers = {
+      -- gglib proxy: OpenAI-compatible, no auth, local only
+      -- Update `model` if you load a different model in gglib
+      gglib = {
+        __inherited_from   = 'openai',
+        api_key_name       = 'cmd:echo sk-dummy',
+        endpoint           = 'http://127.0.0.1:8080/v1',
+        model              = 'unsloth/Qwen3.5-4B-GGUF',
+        timeout            = 60000,
+        extra_request_body = {
+          temperature = 0,
+          max_tokens  = 8192,
+        },
+      },
+    },
+    behaviour = {
+      auto_suggestions = false, -- inline completions off (use blink.cmp)
+    },
+    windows = {
+      position = 'right',
+      width    = 38,
+      wrap     = true,
+    },
+  }
 end
 
 -- ============================================================
