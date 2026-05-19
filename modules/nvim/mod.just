@@ -1,4 +1,4 @@
-# Neovim (LazyVim) — install neovim + lazygit dependency, then stow config
+# Neovim (kickstart.nvim) — install neovim + lazygit dependency, then stow config
 
 install:
     #!/usr/bin/env sh

@@ -1,3 +1,2 @@
-# lazy-lock.json is intentionally not ignored so plugin versions are reproducible.
-# Ignore lazy.nvim's runtime data directory (downloaded, not config).
-/lua/lazyvim/
+# lazy-lock.json is intentionally tracked so plugin versions are reproducible across machines.
+# Update intentionally with :Lazy update inside nvim.
