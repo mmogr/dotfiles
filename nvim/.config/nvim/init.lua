@@ -797,7 +797,8 @@ do
   -- You can press `g?` for help in this menu.
   local ensure_installed = vim.tbl_keys(servers or {})
   vim.list_extend(ensure_installed, {
-    'rustfmt',
+    -- rustfmt is NOT a Mason package — it ships with Rust via rustup.
+    -- conform.nvim calls the system rustfmt binary directly.
     'prettier',
     'eslint_d',
     'jdtls', -- Java language server (managed separately via nvim-jdtls below)
