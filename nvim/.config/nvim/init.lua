@@ -541,6 +541,37 @@ do
 end
 
 -- ============================================================
+-- SECTION 3.9: INTEGRATED TERMINAL (toggleterm)
+-- Persistent terminal that survives toggling — run cargo, npm, etc.
+-- without leaving nvim.
+--
+-- Keymaps:
+--   <C-\>       toggle horizontal terminal (bottom panel, like VS Code)
+--   <leader>tf  toggle floating terminal
+--   <leader>tv  toggle vertical terminal (side panel)
+-- Inside the terminal:
+--   <C-\><C-n>  back to normal mode (built-in nvim — works in any term)
+--   <C-\>       toggle closed (works in terminal mode too)
+-- ============================================================
+do
+  vim.pack.add { gh 'akinsho/toggleterm.nvim' }
+  require('toggleterm').setup {
+    size = function(term)
+      if term.direction == 'horizontal' then return 15
+      elseif term.direction == 'vertical' then return math.floor(vim.o.columns * 0.38)
+      end
+    end,
+    open_mapping = [[<c-\>]],
+    direction = 'horizontal',
+    shade_terminals = false,
+    persist_mode = true, -- remember insert/normal mode per terminal
+  }
+
+  vim.keymap.set({ 'n', 't' }, '<leader>tf', '<cmd>ToggleTerm direction=float<cr>',    { desc = '[T]erminal [F]loating' })
+  vim.keymap.set({ 'n', 't' }, '<leader>tv', '<cmd>ToggleTerm direction=vertical<cr>', { desc = '[T]erminal [V]ertical' })
+end
+
+-- ============================================================
 -- SECTION 4: SEARCH & NAVIGATION
 -- Telescope setup, keymaps, LSP picker mappings
 -- ============================================================
