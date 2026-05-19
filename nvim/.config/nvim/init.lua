@@ -452,7 +452,8 @@ end
 do
   vim.pack.add {
     gh 'nvim-neo-tree/neo-tree.nvim',
-    gh 'MunifTanjim/nui.nvim', -- UI dependency for neo-tree
+    gh 'MunifTanjim/nui.nvim',   -- UI dependency for neo-tree
+    gh 'nvim-lua/plenary.nvim',  -- used by neo-tree for async fs operations
   }
 
   require('neo-tree').setup {
