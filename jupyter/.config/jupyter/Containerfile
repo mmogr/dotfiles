@@ -32,7 +32,7 @@ RUN curl -sL \
         -o /tmp/jjava.zip && \
     unzip /tmp/jjava.zip -d /tmp/jjava && \
     jupyter kernelspec install \
-        "/tmp/jjava/jjava-${JJAVA_VERSION}-kernelspec" \
+        /tmp/jjava \
         --name=java && \
     rm -rf /tmp/jjava /tmp/jjava.zip
 
