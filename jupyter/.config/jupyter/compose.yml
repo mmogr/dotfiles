@@ -1,0 +1,18 @@
+services:
+  jupyterlab:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: localhost/jupyter-polyglot:latest
+    container_name: jupyterlab
+    restart: unless-stopped
+    ports:
+      - "8890:8888"
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
+    environment:
+      # Disable token auth — this container is localhost-only (port 8890).
+      - JUPYTER_TOKEN=
+    volumes:
+      # :U lets Podman automatically remap the UID/GID for rootless operation.
+      - ${HOME}/.local/share/jupyter/notebooks:/home/jovyan/work:U
