@@ -40,3 +40,15 @@ end
 if not abbr --query dbdown
     abbr -a dbdown 'podman-compose -f ~/.config/dev-db/compose.yml stop'
 end
+
+if not abbr --query nbup
+    abbr -a nbup 'podman compose -f ~/.config/jupyter/compose.yml up -d'
+end
+
+if not abbr --query nbdown
+    abbr -a nbdown 'podman compose -f ~/.config/jupyter/compose.yml down'
+end
+
+if not abbr --query nblog
+    abbr -a nblog 'podman logs -f jupyterlab'
+end

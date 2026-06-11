@@ -8,6 +8,7 @@ mod? conda   'modules/conda/mod.just'
 mod? dev-db  'modules/dev-db/mod.just'
 mod? fish    'modules/fish/mod.just'
 mod? gh      'modules/gh/mod.just'
+mod? jupyter 'modules/jupyter/mod.just'
 mod? jetbrains 'modules/jetbrains/mod.just'
 mod? lazygit 'modules/lazygit/mod.just'
 mod? node    'modules/node/mod.just'
@@ -53,6 +54,8 @@ stow-all: backup-defaults
     just dev-db::dirs
     just open-webui::stow
     just open-webui::dirs
+    just jupyter::stow
+    just jupyter::dirs
 
 # Back up any pre-existing default shell files that would collide with stow
 backup-defaults:
@@ -82,7 +85,7 @@ check:
     fi
 
     # 2. Stow packages — dry-run restow; any output means something is out of sync
-    for PKG in shell fish zsh bash nvim dev-db open-webui; do
+    for PKG in shell fish zsh bash nvim dev-db open-webui jupyter; do
         printf "stow %-12s ... " "$PKG"
         OUT=$(cd "$DOTFILES" && stow -n -R "$PKG" 2>&1 || true)
         ISSUES=$(printf '%s\n' "$OUT" | grep -E "cannot stow|ERROR" || true)
