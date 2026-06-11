@@ -18,3 +18,7 @@ services:
     volumes:
       # :U lets Podman automatically remap the UID/GID for rootless operation.
       - ${HOME}/.local/share/jupyter/notebooks:/home/jovyan/work:U
+      # Persistent conda environments. Any env created inside the container
+      # (conda create -n myenv python ipykernel) survives down/up cycles.
+      # nb_conda_kernels auto-discovers envs here as JupyterLab kernels.
+      - ${HOME}/.local/share/jupyter/conda-envs:/opt/conda/envs:U
