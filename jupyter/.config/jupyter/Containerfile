@@ -3,6 +3,7 @@
 # Languages: Python (ipykernel), Rust (evcxr_jupyter), Java (dflib/jjava)
 # SQL:       JupySQL (%sql / %%sql magics) via SQLAlchemy
 # Polyglot:  SoS Notebook kernel + jupyterlab_sos JupyterLab 4.x extension
+# Envs:      nb_conda_kernels — any conda env with ipykernel auto-appears as kernel
 # Runtime:   Rootless Podman — jovyan (UID 1000) with :U volume remapping
 
 FROM quay.io/jupyter/minimal-notebook:ubuntu-22.04
@@ -67,14 +68,14 @@ RUN cargo install --locked evcxr_jupyter && \
     evcxr_jupyter --install
 
 # ── 5. Jovyan layer: Python packages + SoS kernel registration ───────────────
-RUN pip install --no-cache-dir \
-        jupysql \
-        psycopg2-binary \
-        PyMySQL \
-        sos-notebook \
-        sos-python \
-        sos-bash \
-        jupyterlab_sos && \
+# Uses mamba (already in the base image) instead of pip so all packages come
+# from conda-forge with pre-built binaries and consistent solver resolution.
+# --no-prune preserves jupyterlab, notebook, and other base-image packages.
+# environment.yml is stowed alongside this Containerfile — edit it to add/remove
+# packages; the cargo layer above is unaffected (no cache bust for Rust).
+COPY environment.yml /tmp/environment.yml
+RUN mamba env update -n base -f /tmp/environment.yml && \
+    mamba clean --all -f -y && \
     python -m sos_notebook.install
 
 # ── 6. Build-time sanity check ───────────────────────────────────────────────
