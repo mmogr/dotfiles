@@ -36,6 +36,12 @@ RUN curl -sL \
         --name=java && \
     rm -rf /tmp/jjava /tmp/jjava.zip
 
+# Pre-create jovyan's Jupyter data directory as root and set correct ownership.
+# Conda operations in the base image can create ~/.local owned by root, which
+# causes EACCES when evcxr_jupyter --install tries to write there as jovyan.
+RUN mkdir -p /home/jovyan/.local/share/jupyter/kernels && \
+    chown -R "${NB_UID}:${NB_GID}" /home/jovyan/.local
+
 # ── 3. Jovyan layer: Rust toolchain ──────────────────────────────────────────
 USER ${NB_UID}
 
@@ -53,10 +59,8 @@ RUN curl https://sh.rustup.rs -sSf | \
 # compilation model. This layer is the expensive one (~15 min first build);
 # Docker/Podman cache keeps it fast on subsequent rebuilds unless Rust or
 # evcxr versions change.
-# JUPYTER_PATH directs evcxr_jupyter --install to the user-writable location
-# instead of the default /usr/local/share/jupyter/kernels (root-owned).
 RUN cargo install --locked evcxr_jupyter && \
-    JUPYTER_PATH=/home/jovyan/.local/share/jupyter evcxr_jupyter --install
+    evcxr_jupyter --install
 
 # ── 5. Jovyan layer: Python packages + SoS kernel registration ───────────────
 RUN pip install --no-cache-dir \
