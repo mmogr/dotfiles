@@ -6,6 +6,7 @@
 mod? bash    'modules/bash/mod.just'
 mod? conda   'modules/conda/mod.just'
 mod? dev-db  'modules/dev-db/mod.just'
+mod? direnv  'modules/direnv/mod.just'
 mod? fish    'modules/fish/mod.just'
 mod? gh      'modules/gh/mod.just'
 mod? git     'modules/git/mod.just'
@@ -44,6 +45,7 @@ setup: stow-all
     just jetbrains::install
     just open-webui::secrets
     just git::init
+    just direnv::install
     # Build the JupyterLab polyglot image. This is slow on first run (~15 min)
     # due to the Rust/evcxr compile step, but the layer cache makes subsequent
     # runs fast. Must run after podman::enable-socket.
@@ -61,6 +63,7 @@ stow-all: backup-defaults
     just open-webui::stow
     just open-webui::dirs
     just git::stow
+    just direnv::stow
     just jupyter::stow
     just jupyter::dirs
 
@@ -92,7 +95,7 @@ check:
     fi
 
     # 2. Stow packages — dry-run restow; any output means something is out of sync
-    for PKG in shell fish zsh bash nvim dev-db open-webui jupyter git; do
+    for PKG in shell fish zsh bash nvim dev-db open-webui jupyter git direnv; do
         printf "stow %-12s ... " "$PKG"
         OUT=$(cd "$DOTFILES" && stow -n -R "$PKG" 2>&1 || true)
         ISSUES=$(printf '%s\n' "$OUT" | grep -E "cannot stow|ERROR" || true)

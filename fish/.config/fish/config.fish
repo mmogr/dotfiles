@@ -9,6 +9,12 @@ for _conda_prefix in /opt/miniconda3 $HOME/.local/share/miniconda3
     end
 end
 
+# direnv — per-directory env var loading (must come after conda so conda env
+# activations triggered by .envrc work against the already-initialised conda)
+if command -q direnv
+    direnv hook fish | source
+end
+
 # overwrite greeting
 # potentially disabling fastfetch
 #function fish_greeting

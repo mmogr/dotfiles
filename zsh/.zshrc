@@ -39,3 +39,8 @@ done
 unset __conda_setup __conda_prefix
 # <<< conda initialize <<<
 
+# direnv — per-directory env var loading (must come after conda)
+if command -v direnv > /dev/null 2>&1; then
+    eval "$(direnv hook zsh)"
+fi
+
