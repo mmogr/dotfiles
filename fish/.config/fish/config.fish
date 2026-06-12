@@ -41,14 +41,19 @@ if not abbr --query dbdown
     abbr -a dbdown 'podman-compose -f ~/.config/dev-db/compose.yml stop'
 end
 
-if not abbr --query nbup
-    abbr -a nbup 'podman compose -f ~/.config/jupyter/compose.yml up -d'
-end
-
-if not abbr --query nbdown
-    abbr -a nbdown 'podman compose -f ~/.config/jupyter/compose.yml down'
-end
-
 if not abbr --query nblog
     abbr -a nblog 'podman logs -f jupyterlab'
+end
+
+# nbup/nbdown ensure the podman socket is live before invoking compose.
+# `systemctl --user start` is a no-op when the socket is already active,
+# so these are safe to call every time with no performance penalty.
+function nbup --description 'Start JupyterLab (auto-starts podman socket)'
+    systemctl --user start podman.socket
+    podman compose -f ~/.config/jupyter/compose.yml up -d $argv
+end
+
+function nbdown --description 'Stop JupyterLab (auto-starts podman socket)'
+    systemctl --user start podman.socket
+    podman compose -f ~/.config/jupyter/compose.yml down $argv
 end

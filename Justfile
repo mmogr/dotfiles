@@ -42,6 +42,10 @@ setup: stow-all
     just zed::install
     just jetbrains::install
     just open-webui::secrets
+    # Build the JupyterLab polyglot image. This is slow on first run (~15 min)
+    # due to the Rust/evcxr compile step, but the layer cache makes subsequent
+    # runs fast. Must run after podman::enable-socket.
+    just jupyter::build
 
 # Re-link all stow packages and create required data directories (safe to re-run)
 stow-all: backup-defaults
