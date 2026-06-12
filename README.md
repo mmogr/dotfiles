@@ -97,6 +97,11 @@ JupyterLab (polyglot: Python, Rust, Java, SQL, SoS):
 - `nblog` (follow logs)
 - `just jupyter::build` (rebuild image after changing `environment.yml`)
 
+  In any notebook, connect to dev-db with two lines — no connection string to remember:
+
+      %load_ext sql
+      %sql $POSTGRES_URL   # or $MYSQL_URL or $SQLITE_URL
+
 ## Verify Stow State
 
    readlink -f ~/.config/open-webui/docker-compose.yml
