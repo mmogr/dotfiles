@@ -1,0 +1,33 @@
+services:
+  jupyterlab:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: localhost/jupyter-polyglot:latest
+    container_name: jupyterlab
+    restart: unless-stopped
+    ports:
+      - "8890:8888"
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
+    environment:
+      # Explicitly disable token/password auth (localhost-only container).
+      # Jupyter Server 2.x ignores JUPYTER_TOKEN='' and generates a random token
+      # unless --ServerApp.token='' is passed directly to the server process.
+      - NOTEBOOK_ARGS=--ServerApp.token='' --ServerApp.password=''
+      # dev-db connection shortcuts — mirrors the ${VAR:-default} credential
+      # pattern from dev-db/compose.yml so overriding a credential in the shell
+      # propagates consistently to both stacks.
+      # Usage in any notebook: %load_ext sql && %sql $POSTGRES_URL
+      - POSTGRES_URL=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@host.containers.internal:5432/postgres
+      - MYSQL_URL=mysql+pymysql://root:${MYSQL_ROOT_PASSWORD:-root}@host.containers.internal:3306/
+      # SQLite: file-backed, no container needed. Path is inside the notebooks
+      # volume so the .db file persists across nbdown/nbup cycles.
+      - SQLITE_URL=sqlite:////home/jovyan/work/local.db
+    volumes:
+      # :U lets Podman automatically remap the UID/GID for rootless operation.
+      - ${HOME}/.local/share/jupyter/notebooks:/home/jovyan/work:U
+      # Persistent conda environments. Any env created inside the container
+      # (conda create -n myenv python ipykernel) survives down/up cycles.
+      # nb_conda_kernels auto-discovers envs here as JupyterLab kernels.
+      - ${HOME}/.local/share/jupyter/conda-envs:/opt/conda/envs:U
