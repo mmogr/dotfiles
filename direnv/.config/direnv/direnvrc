@@ -1,0 +1,33 @@
+# ~/.config/direnv/direnvrc — tracked in dotfiles, managed by stow
+#
+# This file is sourced by direnv for every .envrc. Add shared layout functions
+# here so they are available in all projects.
+
+# use_conda <env-name>
+# ---------------------
+# Activate a conda environment for the current directory without requiring a
+# full 'conda activate' call (which mutates the parent shell permanently).
+# Place `use conda <env-name>` in a project's .envrc to auto-activate.
+#
+# Works with both the AUR package path (/opt/miniconda3) and the manual
+# install path (~/.local/share/miniconda3). Conda must already be installed.
+use_conda() {
+    local env_name="${1:-base}"
+    local conda_prefix=""
+
+    for _p in /opt/miniconda3 "$HOME/.local/share/miniconda3"; do
+        if [ -x "$_p/bin/conda" ]; then
+            conda_prefix="$_p"
+            break
+        fi
+    done
+
+    if [ -z "$conda_prefix" ]; then
+        log_error "direnv: conda not found (checked /opt/miniconda3 and ~/.local/share/miniconda3)"
+        return 1
+    fi
+
+    # Use conda's shell hook to set PATH, CONDA_PREFIX, etc.
+    eval "$("$conda_prefix/bin/conda" shell.bash activate "$env_name" 2>/dev/null)"
+    export CONDA_DEFAULT_ENV="$env_name"
+}

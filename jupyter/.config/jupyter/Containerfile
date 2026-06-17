@@ -1,0 +1,83 @@
+# JupyterLab Polyglot Container
+#
+# Languages: Python (ipykernel), Rust (evcxr_jupyter), Java (dflib/jjava)
+# SQL:       JupySQL (%sql / %%sql magics) via SQLAlchemy
+# Polyglot:  SoS Notebook kernel + jupyterlab_sos JupyterLab 4.x extension
+# Envs:      nb_conda_kernels — any conda env with ipykernel auto-appears as kernel
+# Runtime:   Rootless Podman — jovyan (UID 1000) with :U volume remapping
+
+FROM quay.io/jupyter/minimal-notebook:ubuntu-22.04
+
+# ── 1. Root layer: system packages ───────────────────────────────────────────
+USER root
+
+RUN apt-get update --quiet && \
+    apt-get install --yes --no-install-recommends \
+        openjdk-21-jdk-headless \
+        build-essential \
+        cmake \
+        pkg-config \
+        libssl-dev \
+        unzip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# ── 2. Root layer: install JJava kernel (dflib/jjava 1.0-a7) ─────────────────
+# Installed system-wide so the kernelspec is visible to the jovyan user.
+ARG JJAVA_VERSION=1.0-a7
+RUN curl -sL \
+        "https://github.com/dflib/jjava/releases/download/${JJAVA_VERSION}/jjava-${JJAVA_VERSION}-kernelspec.zip" \
+        -o /tmp/jjava.zip && \
+    unzip /tmp/jjava.zip -d /tmp/jjava && \
+    jupyter kernelspec install \
+        /tmp/jjava \
+        --name=java && \
+    rm -rf /tmp/jjava /tmp/jjava.zip
+
+# Pre-create jovyan's Jupyter/IPython data directories as root and set correct
+# ownership. Conda operations in the base image can create ~/.local and
+# ~/.ipython owned by root, causing EACCES and "not a writable location"
+# warnings when evcxr_jupyter --install and IPython run as jovyan.
+RUN mkdir -p /home/jovyan/.local/share/jupyter/kernels \
+             /home/jovyan/.ipython && \
+    chown -R "${NB_UID}:${NB_GID}" \
+             /home/jovyan/.local \
+             /home/jovyan/.ipython
+
+# ── 3. Jovyan layer: Rust toolchain ──────────────────────────────────────────
+USER ${NB_UID}
+
+ENV RUSTUP_HOME=/home/jovyan/.rustup
+ENV CARGO_HOME=/home/jovyan/.cargo
+ENV PATH="/home/jovyan/.cargo/bin:${PATH}"
+
+RUN curl https://sh.rustup.rs -sSf | \
+    sh -s -- -y --default-toolchain stable --profile minimal && \
+    rustup component add rust-src
+
+# ── 4. Jovyan layer: build and register evcxr_jupyter ────────────────────────
+# --locked pins to the exact Cargo.lock in the published crate for
+# reproducibility. rust-src (added above) is required for evcxr's incremental
+# compilation model. This layer is the expensive one (~15 min first build);
+# Docker/Podman cache keeps it fast on subsequent rebuilds unless Rust or
+# evcxr versions change.
+RUN cargo install --locked evcxr_jupyter && \
+    evcxr_jupyter --install
+
+# ── 5. Jovyan layer: Python packages + SoS kernel registration ───────────────
+# Uses mamba (already in the base image) instead of pip so all packages come
+# from conda-forge with pre-built binaries and consistent solver resolution.
+# --no-prune preserves jupyterlab, notebook, and other base-image packages.
+# environment.yml is stowed alongside this Containerfile — edit it to add/remove
+# packages; the cargo layer above is unaffected (no cache bust for Rust).
+COPY environment.yml /tmp/environment.yml
+RUN mamba env update -n base -f /tmp/environment.yml && \
+    mamba clean --all -f -y && \
+    python -m sos_notebook.install
+
+# ── 6. Build-time sanity check ───────────────────────────────────────────────
+# Fails the build immediately if any kernel was not registered correctly.
+RUN jupyter kernelspec list

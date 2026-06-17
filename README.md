@@ -22,6 +22,7 @@ Bootstrap automation is handled by [just](https://github.com/casey/just).
 | `nvim` | `~/.config/nvim/` |
 | `dev-db` | `~/.config/dev-db/compose.yml` |
 | `open-webui` | `~/.config/open-webui/docker-compose.yml`, `.env.example` |
+| `jupyter` | `~/.config/jupyter/Containerfile`, `compose.yml`, `environment.yml` |
 
 ## What Is Tracked vs Local
 
@@ -37,6 +38,8 @@ Local only (never tracked):
   - `~/.local/share/open-webui/data`
   - `~/.local/share/dev-db/postgres`
   - `~/.local/share/dev-db/mysql`
+  - `~/.local/share/jupyter/notebooks` (notebook files)
+  - `~/.local/share/jupyter/conda-envs` (persistent conda environments)
 
 ## Bootstrap (any supported platform)
 
@@ -86,6 +89,18 @@ Databases on demand:
 - `pgup` (start Postgres)
 - `myup` (start MySQL)
 - `dbdown` (stop both)
+
+JupyterLab (polyglot: Python, Rust, Java, SQL, SoS):
+
+- `nbup` (start, serves at http://localhost:8890)
+- `nbdown` (stop)
+- `nblog` (follow logs)
+- `just jupyter::build` (rebuild image after changing `environment.yml`)
+
+  In any notebook, connect to dev-db with two lines — no connection string to remember:
+
+      %load_ext sql
+      %sql $POSTGRES_URL   # or $MYSQL_URL or $SQLITE_URL
 
 ## Verify Stow State
 

@@ -1,3 +1,6 @@
 # Local secrets for Open WebUI deployment
 open-webui/.config/open-webui/.env
 open-webui/.config/open-webui/.env.local
+
+# Per-machine git identity (name, email) — managed by `just git::init`
+git/.gitconfig-local

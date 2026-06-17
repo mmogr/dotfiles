@@ -1,0 +1,38 @@
+# Git global config — tracked in dotfiles, managed by stow
+#
+# Identity (name, email) is intentionally NOT stored here to keep this file
+# safe to commit to a public repo. Set it in ~/.gitconfig-local:
+#
+#   [user]
+#       name  = Your Name
+#       email = you@example.com
+#
+# `just git::init` will create a blank ~/.gitconfig-local if one doesn't exist.
+
+[include]
+    path = ~/.gitconfig-local
+
+# ── Credentials ───────────────────────────────────────────────────────────────
+# Delegate to the gh CLI for GitHub token auth (set up by just gh::install)
+[credential "https://github.com"]
+    helper =
+    helper = !/usr/bin/gh auth git-credential
+
+[credential "https://gist.github.com"]
+    helper =
+    helper = !/usr/bin/gh auth git-credential
+
+# ── Defaults ──────────────────────────────────────────────────────────────────
+[init]
+    defaultBranch = main
+
+[pull]
+    rebase = false
+
+# ── Useful aliases ────────────────────────────────────────────────────────────
+[alias]
+    lg   = log --oneline --graph --decorate --all
+    st   = status -sb
+    co   = checkout
+    br   = branch -vv
+    undo = reset --soft HEAD~1

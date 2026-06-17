@@ -1,0 +1,27 @@
+# Conda environment spec for the JupyterLab polyglot container.
+# Installed into the base environment of the jupyter/minimal-notebook image.
+#
+# Managed by: Containerfile (mamba env update -n base -f environment.yml)
+# Channel priority: strict conda-forge-only to avoid mixing solvers.
+#
+# Adding packages here and rebuilding the image (just jupyter::build) is the
+# preferred way to extend the Python environment — no pip calls needed.
+
+name: base
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  # ── SQL ──────────────────────────────────────────────────────────────────────
+  - jupysql               # %sql / %%sql magics via SQLAlchemy
+  - psycopg2              # PostgreSQL driver (pre-built binary from conda-forge)
+  - pymysql               # MySQL/MariaDB driver (pure-Python)
+  # ── SoS polyglot kernel ──────────────────────────────────────────────────────
+  - sos-notebook          # SoS kernel backend
+  - sos-python            # SoS → Python sub-kernel
+  - sos-bash              # SoS → Bash sub-kernel
+  - jupyterlab_sos        # JupyterLab 4.x SoS extension
+  # ── Multi-env kernel discovery ───────────────────────────────────────────────
+  # nb_conda_kernels auto-registers any conda env that contains ipykernel as a
+  # JupyterLab kernel — no manual `python -m ipykernel install` required.
+  - nb_conda_kernels
