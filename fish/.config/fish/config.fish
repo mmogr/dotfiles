@@ -63,3 +63,4 @@ function nbdown --description 'Stop JupyterLab (auto-starts podman socket)'
     systemctl --user start podman.socket
     podman compose -f ~/.config/jupyter/compose.yml down $argv
 end
+/home/matt/.local/bin/mise activate fish | source
