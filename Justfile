@@ -13,6 +13,7 @@ mod? git     'modules/git/mod.just'
 mod? jupyter 'modules/jupyter/mod.just'
 mod? jetbrains 'modules/jetbrains/mod.just'
 mod? lazygit 'modules/lazygit/mod.just'
+mod? mise    'modules/mise/mod.just'
 mod? node    'modules/node/mod.just'
 mod? nvim    'modules/nvim/mod.just'
 mod? open-webui 'modules/open-webui/mod.just'
@@ -33,6 +34,7 @@ setup: stow-all
     just conda::install
     just conda::init
     just rust::install
+    just mise::install
     just node::install
     just lazygit::install
     just nvim::install
