@@ -1,0 +1,8 @@
+# GPU overlay for AMD ROCm — merged automatically by uiup/uidown when both
+# /dev/dri and /dev/kfd are present (Linux + AMD GPU only).
+# Do not use directly; the scripts detect hardware and add this file as needed.
+services:
+  open-webui:
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/kfd:/dev/kfd
