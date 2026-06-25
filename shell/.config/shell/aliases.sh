@@ -6,6 +6,5 @@ alias pgup='podman-compose -f ~/.config/dev-db/compose.yml up -d postgres'
 alias myup='podman-compose -f ~/.config/dev-db/compose.yml up -d mysql'
 alias dbdown='podman-compose -f ~/.config/dev-db/compose.yml stop'
 alias nblog='podman logs -f jupyterlab'
-# nbup/nbdown are defined as Fish functions in config.fish so they can
-# auto-start the podman socket before invoking compose. In other shells,
-# ensure the socket is active (systemctl --user start podman.socket) first.
+# nbup/nbdown: start/stop JupyterLab with automatic podman socket management.
+# Defined as portable scripts in shell/.local/bin/ (stowed to ~/.local/bin/).
