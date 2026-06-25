@@ -31,3 +31,7 @@ services:
       # (conda create -n myenv python ipykernel) survives down/up cycles.
       # nb_conda_kernels auto-discovers envs here as JupyterLab kernels.
       - ${HOME}/.local/share/jupyter/conda-envs:/opt/conda/envs:U
+      # Host Downloads folder — read-only, useful for processing local files.
+      - ${HOME}/Downloads:/home/jovyan/downloads:ro
+      # HuggingFace model cache — persists downloaded weights across restarts.
+      - ${HOME}/.cache/huggingface:/home/jovyan/.cache/huggingface:U
