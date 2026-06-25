@@ -25,10 +25,10 @@ install-manual:
         Darwin-x86_64) INSTALLER="Miniconda3-latest-MacOSX-x86_64.sh" ;;
         *) echo "Unsupported platform: $OS-$ARCH" >&2 && exit 1 ;;
     esac
-    TMPFILE=$(mktemp)
+    TMPFILE=$(mktemp "${TMPDIR:-/tmp}/miniconda-install-XXXXXX.sh")
     curl -fsSL "https://repo.anaconda.com/miniconda/$INSTALLER" -o "$TMPFILE"
     bash "$TMPFILE" -b -p "$HOME/.local/share/miniconda3"
-    rm "$TMPFILE"
+    rm -f "$TMPFILE"
     "$HOME/.local/share/miniconda3/bin/conda" config --set auto_activate_base false
     echo "miniconda3 installed to ~/.local/share/miniconda3"
     echo "Run: just conda::init"
