@@ -1,4 +1,7 @@
-source /usr/share/cachyos-fish-config/cachyos-config.fish
+# CachyOS-specific config (Linux only — not present on macOS or other distros)
+if test -f /usr/share/cachyos-fish-config/cachyos-config.fish
+    source /usr/share/cachyos-fish-config/cachyos-config.fish
+end
 
 # Conda — source native fish hook for full activate/deactivate support
 # Tries AUR install path (/opt/miniconda3) first, then manual install fallback
