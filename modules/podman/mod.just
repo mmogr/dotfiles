@@ -37,7 +37,9 @@ machine-init:
             echo "Podman machine already exists — ensuring it is running..."
             podman machine start 2>/dev/null || true
         else
-            podman machine init
+            # 4 GB RAM: the default 2 GB is too small to compile evcxr_jupyter
+            # (rust-analyzer crates are OOM-killed during cargo install)
+            podman machine init --memory 4096
             podman machine start
             echo "Podman machine initialized and started."
         fi
