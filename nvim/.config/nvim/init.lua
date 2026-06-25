@@ -688,8 +688,8 @@ end
 -- inline diffs, you accept/reject hunks — all inside nvim.
 --
 -- Endpoint: gglib proxy at 127.0.0.1:8080 (must be running: gglib proxy)
--- Model: update `model` below to match whatever gglib has loaded.
---        Run: curl -sf http://127.0.0.1:8080/v1/models | jq -r '.data[0].id'
+-- Model: auto-detected from gglib proxy at startup; use <leader>a? to switch.
+--        Falls back to 'gglib-default' if proxy is not running.
 --
 -- Keymaps (avante default <leader>a prefix):
 --   <leader>aa   Ask avante (open sidebar + send prompt)
@@ -705,16 +705,34 @@ do
 
   -- avante.nvim — requires build step (Rust); runs automatically on install/update
   vim.pack.add { gh 'yetone/avante.nvim' }
+
+  -- Fetch available models from gglib proxy (same io.popen pattern as CopilotChat)
+  local function gglib_fetch_models()
+    local handle = io.popen 'curl -sf --max-time 1 http://127.0.0.1:8080/v1/models 2>/dev/null'
+    if not handle then return {} end
+    local stdout = handle:read '*a'
+    handle:close()
+    local ok, data = pcall(vim.json.decode, stdout or '')
+    if ok and data and data.data and #data.data > 0 then
+      return vim.tbl_map(function(m) return m.id end, data.data)
+    end
+    return {}
+  end
+
+  local gglib_model_list    = gglib_fetch_models()
+  local gglib_default_model = gglib_model_list[1] or 'gglib-default'
+
   require('avante').setup {
     provider = 'gglib',
     providers = {
       -- gglib proxy: OpenAI-compatible, no auth, local only
-      -- Update `model` if you load a different model in gglib
+      -- model and model_names are populated dynamically from /v1/models at startup
       gglib = {
         __inherited_from   = 'openai',
         api_key_name       = 'cmd:echo sk-dummy',
         endpoint           = 'http://127.0.0.1:8080/v1',
-        model              = 'unsloth/Qwen3.5-4B-GGUF',
+        model              = gglib_default_model,
+        model_names        = gglib_model_list,
         timeout            = 60000,
         extra_request_body = {
           temperature = 0,
