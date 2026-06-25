@@ -3,6 +3,10 @@ if test -f /usr/share/cachyos-fish-config/cachyos-config.fish
     source /usr/share/cachyos-fish-config/cachyos-config.fish
 end
 
+# PATH — local tools (mise, scripts) and cargo binaries
+fish_add_path $HOME/.local/bin
+fish_add_path $HOME/.cargo/bin
+
 # Conda — source native fish hook for full activate/deactivate support
 # Tries AUR install path (/opt/miniconda3) first, then manual install fallback
 for _conda_prefix in /opt/miniconda3 $HOME/.local/share/miniconda3
