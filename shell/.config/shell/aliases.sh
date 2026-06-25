@@ -1,10 +1,7 @@
-alias webui='cd ~/.config/open-webui && podman-compose'
-alias uiup='podman-compose -f ~/.config/open-webui/docker-compose.yml up -d'
-alias uidown='podman-compose -f ~/.config/open-webui/docker-compose.yml down'
+# Log tails — read-only, no socket management needed
 alias uilog='podman logs -f open-webui'
-alias pgup='podman-compose -f ~/.config/dev-db/compose.yml up -d postgres'
-alias myup='podman-compose -f ~/.config/dev-db/compose.yml up -d mysql'
-alias dbdown='podman-compose -f ~/.config/dev-db/compose.yml stop'
 alias nblog='podman logs -f jupyterlab'
-# nbup/nbdown: start/stop JupyterLab with automatic podman socket management.
-# Defined as portable scripts in shell/.local/bin/ (stowed to ~/.local/bin/).
+
+# uiup, uidown, pgup, myup, dbdown, nbup, nbdown: start/stop services with
+# automatic podman socket management on Linux. Defined as portable scripts in
+# shell/.local/bin/ (stowed to ~/.local/bin/), available in all shells via PATH.
