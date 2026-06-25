@@ -20,6 +20,3 @@ services:
       - OPENAI_API_BASE_URL=http://host.containers.internal:8080/v1
     volumes:
       - ${HOME}/.local/share/open-webui/data:/app/backend/data:U
-    devices:
-      - /dev/dri:/dev/dri
-      - /dev/kfd:/dev/kfd
