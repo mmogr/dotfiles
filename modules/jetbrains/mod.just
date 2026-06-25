@@ -7,6 +7,10 @@ install:
     #!/usr/bin/env sh
     set -e
     . "{{justfile_directory()}}/lib/detect.sh"
+    if command -v jetbrains-toolbox > /dev/null 2>&1 || [ -d "/Applications/JetBrains Toolbox.app" ]; then
+        echo "JetBrains Toolbox already installed — skipping"
+        exit 0
+    fi
     if command -v pacman > /dev/null 2>&1; then
         $AUR_PM jetbrains-toolbox
     elif command -v brew > /dev/null 2>&1; then

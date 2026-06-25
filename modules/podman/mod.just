@@ -33,9 +33,16 @@ machine-init:
     #!/usr/bin/env sh
     set -e
     if [ "$(uname -s)" = "Darwin" ]; then
-        podman machine init
-        podman machine start
-        echo "Podman machine initialized and started."
+        if podman machine inspect podman-machine-default > /dev/null 2>&1; then
+            echo "Podman machine already exists — ensuring it is running..."
+            podman machine start 2>/dev/null || true
+        else
+            # 4 GB RAM: the default 2 GB is too small to compile evcxr_jupyter
+            # (rust-analyzer crates are OOM-killed during cargo install)
+            podman machine init --memory 4096
+            podman machine start
+            echo "Podman machine initialized and started."
+        fi
     else
         echo "Skipping machine init (not macOS)."
     fi

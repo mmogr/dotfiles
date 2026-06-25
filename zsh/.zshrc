@@ -44,3 +44,6 @@ if command -v direnv > /dev/null 2>&1; then
     eval "$(direnv hook zsh)"
 fi
 
+# mise — universal tool version manager (node, python, ruby, etc.)
+[ -x "$HOME/.local/bin/mise" ] && eval "$("$HOME/.local/bin/mise" activate zsh)"
+

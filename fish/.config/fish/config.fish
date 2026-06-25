@@ -1,4 +1,11 @@
-source /usr/share/cachyos-fish-config/cachyos-config.fish
+# CachyOS-specific config (Linux only — not present on macOS or other distros)
+if test -f /usr/share/cachyos-fish-config/cachyos-config.fish
+    source /usr/share/cachyos-fish-config/cachyos-config.fish
+end
+
+# PATH — local tools (mise, scripts) and cargo binaries
+fish_add_path $HOME/.local/bin
+fish_add_path $HOME/.cargo/bin
 
 # Conda — source native fish hook for full activate/deactivate support
 # Tries AUR install path (/opt/miniconda3) first, then manual install fallback
@@ -51,16 +58,7 @@ if not abbr --query nblog
     abbr -a nblog 'podman logs -f jupyterlab'
 end
 
-# nbup/nbdown ensure the podman socket is live before invoking compose.
-# `systemctl --user start` is a no-op when the socket is already active,
-# so these are safe to call every time with no performance penalty.
-function nbup --description 'Start JupyterLab (auto-starts podman socket)'
-    systemctl --user start podman.socket
-    podman compose -f ~/.config/jupyter/compose.yml up -d $argv
+# mise — universal tool version manager (node, python, ruby, etc.)
+if test -x $HOME/.local/bin/mise
+    $HOME/.local/bin/mise activate fish | source
 end
-
-function nbdown --description 'Stop JupyterLab (auto-starts podman socket)'
-    systemctl --user start podman.socket
-    podman compose -f ~/.config/jupyter/compose.yml down $argv
-end
-/home/matt/.local/bin/mise activate fish | source

@@ -7,6 +7,10 @@ install:
     #!/usr/bin/env sh
     set -e
     . "{{justfile_directory()}}/lib/detect.sh"
+    if command -v zed > /dev/null 2>&1 || [ -d "/Applications/Zed.app" ]; then
+        echo "Zed already installed — skipping"
+        exit 0
+    fi
     if command -v pacman > /dev/null 2>&1; then
         $PM zed
     elif command -v brew > /dev/null 2>&1; then

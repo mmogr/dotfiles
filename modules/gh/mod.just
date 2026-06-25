@@ -4,4 +4,8 @@ install:
     #!/usr/bin/env sh
     set -e
     . "{{justfile_directory()}}/lib/detect.sh"
-    $PM github-cli
+    if command -v brew > /dev/null 2>&1; then
+        brew install gh
+    else
+        $PM github-cli
+    fi

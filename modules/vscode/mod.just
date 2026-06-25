@@ -7,6 +7,10 @@ install:
     #!/usr/bin/env sh
     set -e
     . "{{justfile_directory()}}/lib/detect.sh"
+    if command -v code > /dev/null 2>&1 || [ -d "/Applications/Visual Studio Code.app" ]; then
+        echo "VS Code already installed — skipping"
+        exit 0
+    fi
     if command -v pacman > /dev/null 2>&1; then
         $AUR_PM visual-studio-code-bin
     elif command -v brew > /dev/null 2>&1; then
