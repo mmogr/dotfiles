@@ -558,6 +558,10 @@ end
 --                   OPENAI_BASE_URL  (default: http://localhost:8080)
 --                   OPENAI_API_KEY   (default: "ollama" for keyless servers)
 --
+-- Agentic codebase tools (@copilot):
+--   The LLM can call glob / grep / file / edit to explore and edit the repo.
+--   bash is NOT auto-trusted — Neovim will prompt before running shell commands.
+--
 -- Keymaps:
 --   <leader>cc   Open/toggle chat window
 --   <leader>cq   Quick floating ask (no persistent window)
@@ -565,6 +569,7 @@ end
 --   Visual <leader>cc  Ask about selection
 --
 -- First-time GitHub Copilot setup: :Copilot auth
+-- Startup: if gglib is installed but proxy not running, a WARN notification appears.
 -- ============================================================
 do
   -- copilot.lua: auth layer, inline suggestions intentionally OFF
@@ -581,6 +586,8 @@ do
   require('CopilotChat').setup {
     -- gglib proxy is the default: start with `gglib proxy` in a terminal
     provider = 'gglib_proxy',
+    tools = '@copilot',                                    -- LLM can glob/grep/read files to explore the codebase
+    trusted_tools = { 'file', 'glob', 'grep', 'edit' },   -- bash stays gated (Neovim prompts before running)
 
     providers = {
       -- gglib proxy — local LLM via gglib (127.0.0.1:8080, no auth needed)
@@ -648,6 +655,31 @@ do
     if input ~= '' then require('CopilotChat').ask(input) end
   end, { desc = '[C]opilot [Q]uick ask' })
   vim.keymap.set('n', '<leader>cp', '<cmd>CopilotChatModel<cr>', { desc = '[C]opilot [P]ick model/provider' })
+
+  -- Warn if gglib is installed but the proxy is not running
+  vim.api.nvim_create_autocmd('VimEnter', {
+    once = true,
+    callback = function()
+      vim.defer_fn(function()
+        if vim.fn.executable 'gglib' == 0 then return end
+        vim.system(
+          { 'curl', '-sf', '--max-time', '1', 'http://127.0.0.1:8080/health' },
+          {},
+          function(result)
+            if result.code ~= 0 then
+              vim.schedule(function()
+                vim.notify(
+                  '[gglib] proxy not running — start with: gglib proxy',
+                  vim.log.levels.WARN,
+                  { title = 'gglib' }
+                )
+              end)
+            end
+          end
+        )
+      end, 500)
+    end,
+  })
 end
 
 -- ============================================================
