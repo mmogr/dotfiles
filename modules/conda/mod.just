@@ -16,6 +16,10 @@ install-aur:
 install-manual:
     #!/usr/bin/env sh
     set -e
+    if [ -x "$HOME/.local/share/miniconda3/bin/conda" ]; then
+        echo "conda already installed at ~/.local/share/miniconda3 — skipping"
+        exit 0
+    fi
     OS=$(uname -s)
     ARCH=$(uname -m)
     case "$OS-$ARCH" in
@@ -37,6 +41,10 @@ install-manual:
 install:
     #!/usr/bin/env sh
     set -e
+    if [ -x /opt/miniconda3/bin/conda ] || [ -x "$HOME/.local/share/miniconda3/bin/conda" ]; then
+        echo "conda already installed — skipping (run: just conda::init to verify)"
+        exit 0
+    fi
     if command -v paru >/dev/null 2>&1; then
         paru -S --noconfirm miniconda3
         /opt/miniconda3/bin/conda config --set auto_activate_base false
