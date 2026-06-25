@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+# uiup — start the Open WebUI container via podman compose.
+# On Linux, ensures the rootless podman socket is live first.
+# On macOS, the podman machine manages the socket (started by: just podman::machine-init).
+set -e
+if [ "$(uname -s)" = "Linux" ]; then
+    systemctl --user start podman.socket
+fi
+podman compose -f "$HOME/.config/open-webui/docker-compose.yml" up -d "$@"
