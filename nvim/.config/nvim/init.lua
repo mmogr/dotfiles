@@ -616,6 +616,11 @@ do
       auto_suggestions              = false, -- inline completions off (use blink.cmp)
       auto_approve_tool_permissions = true,  -- default: approve all (overridden in plan mode)
     },
+    -- attempt_completion crashes with nil path when the model includes a demo
+    -- command (bash.lua:225 calls get_abs_path(input.path) but attempt_completion
+    -- never passes a path). Upstream bug present in both pinned and HEAD. Disabling
+    -- the tool is harmless: the response is already rendered before it fires.
+    disabled_tools = { 'attempt_completion' },
     windows = {
       position = 'right',
       width    = 38,
@@ -641,7 +646,7 @@ do
     -- git mutation
     'git_commit',
     -- meta / orchestration
-    'write_todos', 'dispatch_agent',
+    'write_todos', 'dispatch_agent', 'attempt_completion',
   }
 
   vim.keymap.set('n', '<leader>ap', function()
@@ -664,7 +669,7 @@ do
   vim.keymap.set('n', '<leader>ae', function()
     require('avante.config').override {
       system_prompt  = nil,
-      disabled_tools = {},
+      disabled_tools = { 'attempt_completion' }, -- keep the crash workaround active
       behaviour      = { auto_approve_tool_permissions = true },
     }
     vim.notify('[avante] EXECUTE MODE — all tools enabled', vim.log.levels.INFO, { title = 'avante' })
