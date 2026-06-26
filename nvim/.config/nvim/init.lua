@@ -546,143 +546,6 @@ do
 end
 
 -- ============================================================
--- SECTION 3.8: AI / COPILOT
--- copilot.lua  — auth + model access (inline completions OFF by default)
--- CopilotChat  — VS Code Copilot Chat sidebar equivalent
---
--- Providers (switch with <leader>cp):
---   gglib_proxy   gglib proxy on 127.0.0.1:8080 (default — no auth)
---                 Start with: gglib proxy
---   copilot       GitHub Copilot (run :Copilot auth on first use)
---   openai_compat Any other OpenAI-compatible endpoint:
---                   OPENAI_BASE_URL  (default: http://localhost:8080)
---                   OPENAI_API_KEY   (default: "ollama" for keyless servers)
---
--- Agentic codebase tools (@copilot):
---   The LLM can call glob / grep / file / edit to explore and edit the repo.
---   bash is NOT auto-trusted — Neovim will prompt before running shell commands.
---
--- Keymaps:
---   <leader>cc   Open/toggle chat window
---   <leader>cq   Quick floating ask (no persistent window)
---   <leader>cp   Pick provider / model
---   Visual <leader>cc  Ask about selection
---
--- First-time GitHub Copilot setup: :Copilot auth
--- Startup: if gglib is installed but proxy not running, a WARN notification appears.
--- ============================================================
-do
-  -- copilot.lua: auth layer, inline suggestions intentionally OFF
-  vim.pack.add { gh 'zbirenbaum/copilot.lua' }
-  require('copilot').setup {
-    suggestion = { enabled = false },
-    panel     = { enabled = false },
-    filetypes = { ['*'] = true },
-  }
-
-  -- CopilotChat
-  vim.pack.add { gh 'CopilotC-Nvim/CopilotChat.nvim' }
-
-  require('CopilotChat').setup {
-    -- gglib proxy is the default: start with `gglib proxy` in a terminal
-    provider = 'gglib_proxy',
-    tools = '@copilot',                                    -- LLM can glob/grep/read files to explore the codebase
-    trusted_tools = { 'file', 'glob', 'grep', 'edit' },   -- bash stays gated (Neovim prompts before running)
-
-    providers = {
-      -- gglib proxy — local LLM via gglib (127.0.0.1:8080, no auth needed)
-      gglib_proxy = {
-        prepare_input  = require('CopilotChat.config.providers').copilot.prepare_input,
-        prepare_output = require('CopilotChat.config.providers').copilot.prepare_output,
-        get_headers = function()
-          return { ['Content-Type'] = 'application/json' }
-        end,
-        get_models = function(_)
-          -- io.popen (pure Lua) works in CopilotChat's async context; vim.system does not
-          local handle = io.popen('curl -sf http://127.0.0.1:8080/v1/models 2>/dev/null')
-          if not handle then
-            return { { id = 'gglib-default', name = 'gglib-default', streaming = true } }
-          end
-          local stdout = handle:read '*a'
-          handle:close()
-          local ok, data = pcall(vim.json.decode, stdout or '')
-          if ok and data and data.data then
-            return vim.tbl_map(function(m) return { id = m.id, name = m.id, streaming = true } end, data.data)
-          end
-          return { { id = 'gglib-default', name = 'gglib-default', streaming = true } }
-        end,
-        get_url = function() return 'http://127.0.0.1:8080/v1/chat/completions' end,
-      },
-
-      -- Generic OpenAI-compatible endpoint (env-var driven, e.g. remote APIs)
-      -- Uses os.getenv (pure Lua) — vim.env uses VimScript and fails in async context
-      openai_compat = {
-        prepare_input  = require('CopilotChat.config.providers').copilot.prepare_input,
-        prepare_output = require('CopilotChat.config.providers').copilot.prepare_output,
-        get_headers = function()
-          local key = os.getenv('OPENAI_API_KEY') or 'ollama'
-          return {
-            ['Content-Type'] = 'application/json',
-            Authorization    = 'Bearer ' .. key,
-          }
-        end,
-        get_models = function(headers)
-          local base = os.getenv('OPENAI_BASE_URL') or 'http://localhost:8080'
-          local handle = io.popen('curl -sf -H "Authorization: ' .. headers.Authorization .. '" ' .. base .. '/v1/models 2>/dev/null')
-          if not handle then return { { id = 'default', name = 'default', streaming = true } } end
-          local stdout = handle:read '*a'
-          handle:close()
-          local ok, data = pcall(vim.json.decode, stdout or '')
-          if ok and data and data.data then
-            return vim.tbl_map(function(m) return { id = m.id, name = m.id, streaming = true } end, data.data)
-          end
-          return { { id = 'default', name = 'default', streaming = true } }
-        end,
-        get_url = function()
-          return (os.getenv('OPENAI_BASE_URL') or 'http://localhost:8080') .. '/v1/chat/completions'
-        end,
-      },
-    },
-
-    -- Chat window: vertical split on the right, 40% width
-    window = { layout = 'vertical', width = 0.4 },
-  }
-
-  -- Keymaps
-  vim.keymap.set({ 'n', 'v' }, '<leader>cc', '<cmd>CopilotChatToggle<cr>', { desc = '[C]opilot [C]hat toggle' })
-  vim.keymap.set({ 'n', 'v' }, '<leader>cq', function()
-    local input = vim.fn.input 'Quick ask: '
-    if input ~= '' then require('CopilotChat').ask(input) end
-  end, { desc = '[C]opilot [Q]uick ask' })
-  vim.keymap.set('n', '<leader>cp', '<cmd>CopilotChatModel<cr>', { desc = '[C]opilot [P]ick model/provider' })
-
-  -- Warn if gglib is installed but the proxy is not running
-  vim.api.nvim_create_autocmd('VimEnter', {
-    once = true,
-    callback = function()
-      vim.defer_fn(function()
-        if vim.fn.executable 'gglib' == 0 then return end
-        vim.system(
-          { 'curl', '-sf', '--max-time', '1', 'http://127.0.0.1:8080/health' },
-          {},
-          function(result)
-            if result.code ~= 0 then
-              vim.schedule(function()
-                vim.notify(
-                  '[gglib] proxy not running — start with: gglib proxy',
-                  vim.log.levels.WARN,
-                  { title = 'gglib' }
-                )
-              end)
-            end
-          end
-        )
-      end, 500)
-    end,
-  })
-end
-
--- ============================================================
 -- SECTION 3.85: AGENTIC CODING (avante.nvim)
 -- Cursor/VS Code agent-mode equivalent: the model reads files, proposes
 -- inline diffs, you accept/reject hunks — all inside nvim.
@@ -691,12 +554,21 @@ end
 -- Model: auto-detected from gglib proxy at startup; use <leader>a? to switch.
 --        Falls back to 'gglib-default' if proxy is not running.
 --
--- Keymaps (avante default <leader>a prefix):
+-- PLAN / EXECUTE mode toggle (hot-swaps avante.config at runtime):
+--   <leader>ap   PLAN MODE  — strips write/exec tools; model can only read,
+--                              then writes a structured markdown plan.
+--   <leader>ae   EXECUTE MODE — restores all tools; model may edit freely.
+--                (Normal mode only; avante's default visual <leader>ae is unchanged.)
+--
+-- Standard keymaps (avante default <leader>a prefix):
 --   <leader>aa   Ask avante (open sidebar + send prompt)
---   <leader>ae   Edit with instruction (visual: ask about selection)
 --   <leader>ar   Refresh / regenerate last response
 --   <leader>af   Focus avante input box
+--   <leader>a?   Switch model (picker)
+--   <leader>an   New ask (fresh chat)
 -- Inside diff view: <Tab>/<S-Tab> to cycle hunks, <CR> to accept, <BS> reject
+--
+-- Startup: if gglib is installed but proxy not running, a WARN notification appears.
 -- ============================================================
 do
   -- render-markdown: pretty markdown in avante sidebar (and .md files)
@@ -706,7 +578,7 @@ do
   -- avante.nvim — requires build step (Rust); runs automatically on install/update
   vim.pack.add { gh 'yetone/avante.nvim' }
 
-  -- Fetch available models from gglib proxy (same io.popen pattern as CopilotChat)
+  -- Fetch available models from gglib proxy at startup
   local function gglib_fetch_models()
     local handle = io.popen 'curl -sf --max-time 1 http://127.0.0.1:8080/v1/models 2>/dev/null'
     if not handle then return {} end
@@ -741,7 +613,8 @@ do
       },
     },
     behaviour = {
-      auto_suggestions = false, -- inline completions off (use blink.cmp)
+      auto_suggestions              = false, -- inline completions off (use blink.cmp)
+      auto_approve_tool_permissions = true,  -- default: approve all (overridden in plan mode)
     },
     windows = {
       position = 'right',
@@ -749,6 +622,84 @@ do
       wrap     = true,
     },
   }
+
+  -- ── Plan / Execute mode toggle ───────────────────────────────────────────
+  -- All write, edit, create, delete, and exec tools are stripped from the
+  -- model's context in plan mode — it cannot use them even if it tries.
+  -- Execute mode restores the defaults set in setup() above.
+  local PLAN_DISABLED_TOOLS = {
+    -- file write / edit
+    'str_replace', 'write_to_file', 'insert',         'undo_edit',
+    'edit_file',   'create_file',   'write_global_file',
+    -- filesystem mutation
+    'move_path',   'copy_path',     'delete_path',     'create_dir',
+    -- code / command execution (all known names; hallucinated names also listed)
+    'bash',        'python',        'run_python',      'run_code',
+    'execute',
+    -- external I/O (network)
+    'web_search',  'fetch',
+    -- git mutation
+    'git_commit',
+    -- meta / orchestration
+    'write_todos', 'dispatch_agent',
+  }
+
+  vim.keymap.set('n', '<leader>ap', function()
+    require('avante.config').override {
+      system_prompt  = 'You are in PLAN MODE. You may use read-only tools'
+        .. ' (read_file, view, glob, grep, ls, git_diff, think, etc.) to investigate'
+        .. ' the codebase, but you are STRICTLY FORBIDDEN from using any write, edit,'
+        .. ' create, delete, bash, or git-commit tools. Do NOT produce diffs or apply'
+        .. ' changes. Only output a clear, structured markdown plan.'
+        .. ' CRITICAL: You do not have a code interpreter. DO NOT attempt to write,'
+        .. ' generate, or execute any code using tools. You are strictly a text-based'
+        .. ' analyzer. Your ONLY output must be a Markdown text plan.'
+        .. ' EXCEPTION: You are allowed to ask questions BEFORE writing the plan'
+        .. ' ONLY if the task is severely ambiguous. If you must ask, do not ask'
+        .. ' broad questions. Use your read tools to investigate the codebase first,'
+        .. ' and formulate highly specific, targeted questions based on what you found.'
+        .. ' Wait for the user\'s response before continuing.',
+      disabled_tools = PLAN_DISABLED_TOOLS,
+      behaviour      = { auto_approve_tool_permissions = false },
+    }
+    vim.notify('[avante] PLAN MODE — read-only tools only', vim.log.levels.INFO, { title = 'avante' })
+    require('avante.api').ask()
+  end, { desc = '[A]vante [P]lan mode (read-only)' })
+
+  vim.keymap.set('n', '<leader>ae', function()
+    require('avante.config').override {
+      system_prompt  = nil,
+      disabled_tools = {},
+      behaviour      = { auto_approve_tool_permissions = true },
+    }
+    vim.notify('[avante] EXECUTE MODE — all tools enabled', vim.log.levels.INFO, { title = 'avante' })
+    require('avante.api').ask()
+  end, { desc = '[A]vante [E]xecute mode (all tools)' })
+
+  -- Warn at startup if gglib is installed but the proxy is not running
+  vim.api.nvim_create_autocmd('VimEnter', {
+    once = true,
+    callback = function()
+      vim.defer_fn(function()
+        if vim.fn.executable 'gglib' == 0 then return end
+        vim.system(
+          { 'curl', '-sf', '--max-time', '1', 'http://127.0.0.1:8080/health' },
+          {},
+          function(result)
+            if result.code ~= 0 then
+              vim.schedule(function()
+                vim.notify(
+                  '[gglib] proxy not running — start with: gglib proxy',
+                  vim.log.levels.WARN,
+                  { title = 'gglib' }
+                )
+              end)
+            end
+          end
+        )
+      end, 500)
+    end,
+  })
 end
 
 -- ============================================================
