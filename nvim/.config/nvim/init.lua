@@ -658,7 +658,12 @@ do
         .. ' changes. Only output a clear, structured markdown plan.'
         .. ' CRITICAL: You do not have a code interpreter. DO NOT attempt to write,'
         .. ' generate, or execute any code using tools. You are strictly a text-based'
-        .. ' analyzer. Your ONLY output must be a Markdown text plan.',
+        .. ' analyzer. Your ONLY output must be a Markdown text plan.'
+        .. ' EXCEPTION: You are allowed to ask questions BEFORE writing the plan'
+        .. ' ONLY if the task is severely ambiguous. If you must ask, do not ask'
+        .. ' broad questions. Use your read tools to investigate the codebase first,'
+        .. ' and formulate highly specific, targeted questions based on what you found.'
+        .. ' Wait for the user\'s response before continuing.',
       disabled_tools = PLAN_DISABLED_TOOLS,
       behaviour      = { auto_approve_tool_permissions = false },
     }
