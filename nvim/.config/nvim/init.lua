@@ -628,10 +628,20 @@ do
   -- model's context in plan mode — it cannot use them even if it tries.
   -- Execute mode restores the defaults set in setup() above.
   local PLAN_DISABLED_TOOLS = {
+    -- file write / edit
     'str_replace', 'write_to_file', 'insert',         'undo_edit',
-    'bash',        'edit_file',     'create_file',     'write_global_file',
+    'edit_file',   'create_file',   'write_global_file',
+    -- filesystem mutation
     'move_path',   'copy_path',     'delete_path',     'create_dir',
-    'git_commit',  'write_todos',   'dispatch_agent',
+    -- code / command execution (all known names; hallucinated names also listed)
+    'bash',        'python',        'run_python',      'run_code',
+    'execute',
+    -- external I/O (network)
+    'web_search',  'fetch',
+    -- git mutation
+    'git_commit',
+    -- meta / orchestration
+    'write_todos', 'dispatch_agent',
   }
 
   vim.keymap.set('n', '<leader>ap', function()
@@ -640,7 +650,10 @@ do
         .. ' (read_file, view, glob, grep, ls, git_diff, think, etc.) to investigate'
         .. ' the codebase, but you are STRICTLY FORBIDDEN from using any write, edit,'
         .. ' create, delete, bash, or git-commit tools. Do NOT produce diffs or apply'
-        .. ' changes. Only output a clear, structured markdown plan.',
+        .. ' changes. Only output a clear, structured markdown plan.'
+        .. ' CRITICAL: You do not have a code interpreter. DO NOT attempt to write,'
+        .. ' generate, or execute any code using tools. You are strictly a text-based'
+        .. ' analyzer. Your ONLY output must be a Markdown text plan.',
       disabled_tools = PLAN_DISABLED_TOOLS,
       behaviour      = { auto_approve_tool_permissions = false },
     }
