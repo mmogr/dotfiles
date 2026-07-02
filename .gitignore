@@ -4,3 +4,5 @@ open-webui/.config/open-webui/.env.local
 
 # Per-machine git identity (name, email) — managed by `just git::init`
 git/.gitconfig-local
+
+*/.DS_Store
