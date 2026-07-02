@@ -1,7 +1,7 @@
 ---
 description: "Serves as the Project Manager and Router. Uses the Planner and Principal Engineer for discovery and red-teaming, gets human approval, and interactively generates XML-structured prompts to feed to a separate Implementation Engineer coding agent one at a time, enforcing TDD, atomic commits, and a final PR."
 name: "Lead Architect"
-tools: [vscode/memory, vscode/runCommand, vscode/askQuestions, vscode/toolSearch, execute/getTerminalOutput, execute/killTerminal, execute/sendToTerminal, execute/runTask, execute/createAndRunTask, execute/runInTerminal, execute/runTests, execute/testFailure, read/problems, read/readFile, read/viewImage, read/terminalSelection, read/terminalLastCommand, read/getTaskOutput, agent, ms-vscode.vscode-websearchforcopilot, search, web, browser, github/get_commit, github/get_copilot_job_status, github/get_file_contents, github/get_label, github/get_latest_release, github/get_me, github/get_release_by_tag, github/get_tag, github/get_team_members, github/get_teams, github/issue_read, github/list_branches, github/list_commits, github/list_issue_fields, github/list_issue_types, github/list_issues, github/list_pull_requests, github/list_releases, github/list_repository_collaborators, github/list_tags, github/pull_request_read, github/search_commits, github/search_issues, github/search_pull_requests, github/search_repositories, github/search_users, vscodeTasks/createAndRunTask, vscodeTasks/runTask, vscodeTasks/getTaskOutput, vscodeGeneral/problems, vscodeGeneral/runCommand, vscodeGeneral/runTests, vscodeGeneral/testFailure, vscodeGeneral/toolSearch, todo]
+tools: [agent, vscode/askQuestions, vscode/memory, todo]
 agents: ['*']
 ---
 # Role
