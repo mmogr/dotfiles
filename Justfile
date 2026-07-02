@@ -68,6 +68,7 @@ stow-all: backup-defaults
     just direnv::stow
     just jupyter::stow
     just jupyter::dirs
+    just vscode::stow
 
 # Back up any pre-existing default shell files that would collide with stow
 backup-defaults:
@@ -109,6 +110,24 @@ check:
             FAILED=1
         fi
     done
+
+    # 3. vscode/agents — custom target outside $HOME, so it can't join the
+    #    generic loop above; re-derive the same OS-aware target it uses.
+    printf "stow %-12s ... " "vscode"
+    if [ "$(uname -s)" = "Darwin" ]; then
+        VSCODE_TARGET="$HOME/Library/Application Support/Code/User/prompts"
+    else
+        VSCODE_TARGET="${XDG_CONFIG_HOME:-$HOME/.config}/Code/User/prompts"
+    fi
+    OUT=$(cd "$DOTFILES/vscode" && stow -n -R -t "$VSCODE_TARGET" agents 2>&1 || true)
+    ISSUES=$(printf '%s\n' "$OUT" | grep -E "cannot stow|ERROR" || true)
+    if [ -z "$ISSUES" ]; then
+        echo "OK"
+    else
+        echo "OUT OF SYNC"
+        echo "$ISSUES" | sed 's/^/  /'
+        FAILED=1
+    fi
 
     # Summary
     echo ""

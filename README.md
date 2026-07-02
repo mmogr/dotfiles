@@ -23,6 +23,7 @@ Bootstrap automation is handled by [just](https://github.com/casey/just).
 | `dev-db` | `~/.config/dev-db/compose.yml` |
 | `open-webui` | `~/.config/open-webui/docker-compose.yml`, `.env.example` |
 | `jupyter` | `~/.config/jupyter/Containerfile`, `compose.yml`, `environment.yml` |
+| `vscode` (source: `vscode/agents/`) | macOS: `~/Library/Application Support/Code/User/prompts/*.agent.md`<br>Linux: `${XDG_CONFIG_HOME:-~/.config}/Code/User/prompts/*.agent.md` |
 
 ## What Is Tracked vs Local
 
@@ -110,5 +111,9 @@ JupyterLab (polyglot: Python, Rust, Java, SQL, SoS):
    readlink -f ~/.config/nvim/init.lua
    readlink -f ~/.zshrc
    readlink -f ~/.bashrc
+
+   # vscode (path differs by OS — see Stow Packages table above)
+   readlink -f "~/Library/Application Support/Code/User/prompts/LeadArchitect.agent.md"   # macOS
+   readlink -f ~/.config/Code/User/prompts/LeadArchitect.agent.md                          # Linux
 
 Each path should resolve into `~/.dotfiles/...`.

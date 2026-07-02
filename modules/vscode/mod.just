@@ -20,3 +20,19 @@ install:
     else
         echo "Unsupported platform for VS Code install" >&2 && exit 1
     fi
+
+# Symlink custom agent files (vscode/agents/*.agent.md) into the VS Code
+# User profile prompts folder. That path differs by OS (not by distro —
+# every Linux distro follows the same XDG convention):
+#   macOS: ~/Library/Application Support/Code/User/prompts
+#   Linux: ${XDG_CONFIG_HOME:-~/.config}/Code/User/prompts
+stow:
+    #!/usr/bin/env sh
+    set -e
+    if [ "$(uname -s)" = "Darwin" ]; then
+        TARGET="$HOME/Library/Application Support/Code/User/prompts"
+    else
+        TARGET="${XDG_CONFIG_HOME:-$HOME/.config}/Code/User/prompts"
+    fi
+    mkdir -p "$TARGET"
+    sh "{{justfile_directory()}}/lib/stow-safe.sh" "{{justfile_directory()}}/vscode" agents "$TARGET"
