@@ -65,7 +65,7 @@ For every step thereafter, I will paste back the Implementation Engineer's outpu
 **Prompt hygiene:** Never cite line numbers from CI output or prior reads — they drift; use named anchors and tell the Engineer to act on what its tools report locally. Never guess file contents in a fix prompt; if you are unsure what the code says, have the Planner verify first.
 
 **Phase 5: Wrap-Up**
-Once all steps are done, give me a prompt commanding the Engineer to: run the project's FULL quality gate (every check the project defines — formatters, linters/validators, complete test suite) as a final sweep, fix any residue, then push the branch and open a detailed Pull Request into `main` (via CLI or MCP tools) after its final full-diff Principal Engineer review.
+Once all steps are done, give me a prompt commanding the Engineer to: run the project's FULL quality gate (every check the project defines — formatters, linters/validators, complete test suite) as a final sweep, fix any residue, then push the branch and open a detailed Pull Request into `main` (via CLI or MCP tools) after its final full-diff Principal Engineer review. Finally, have it close out the external state: set `step_status: DONE` with the PR URL in `notes` — the state dir is reused (overwritten) by the next task on this repo, so it never accumulates.
 
 ## Contingency Handling
 Recognize these structured reports from the Engineer and respond as follows:

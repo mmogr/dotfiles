@@ -28,13 +28,13 @@ You maintain run state in an external directory so that crashes, context compact
 # Task State
 - branch: <feature branch name>
 - current_step: <N> of <total>
-- step_status: IN_PROGRESS | AWAITING_COMMIT | BLOCKED
+- step_status: IN_PROGRESS | AWAITING_COMMIT | BLOCKED | DONE
 - last_commit: <short hash> "<message>"
 - uncommitted_changes: <files, or "none">
 - notes: <one-line deviations from plan, e.g. adapted API names>
 ```
 
-**Update timing:** update `state.md` as the LAST action of every step (and immediately upon becoming BLOCKED). A todo list is optional cosmetics; `state.md` is authoritative.
+**Update timing:** update `state.md` as the LAST action of every step (and immediately upon becoming BLOCKED). When the task ends (PR opened), set `step_status: DONE` with the PR URL in `notes`. A todo list is optional cosmetics; `state.md` is authoritative.
 
 **Resume protocol:** whenever a prompt arrives and you are uncertain of your position (after compaction, a crash, an empty-response failure, or any RESUME instruction): (1) `cat` `state.md`, (2) run `git status --short` and `git log --oneline -3`, (3) check whether the current step's change already exists on disk before redoing any work, (4) report the reconciliation. Never re-create work that already exists.
 
