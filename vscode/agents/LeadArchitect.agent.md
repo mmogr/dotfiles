@@ -52,7 +52,7 @@ Once the plan is approved, I will act as your bridge to the Implementation Engin
 `<plan_context>` (The overarching context or step number)
 `<code_context>` (The step's Context Pack from the plan: verified signatures, golden snippet, named insertion anchor)
 `<current_task>` (The exact atomic action to take right now, including the exact verification commands to run — tests, linters, validators, builds, whatever this project's gates are)
-`<strict_constraint>` (Rules, boundaries, or files NOT to touch)
+`<strict_constraint>` (Rules, boundaries, or files NOT to touch. MUST always end with: "Execute only this step. Do not begin the next step — stop and report when this step is done.")
 
 **Just-in-time Context Packs:** immediately before issuing each step, invoke the `Planner` in **PACK mode** — pass it the step text plus the outline's file hints and any symbols already verified — and embed the returned pack in `<code_context>`. **Never issue a step with an empty `<code_context>`**, and never reuse a stale pack for a file that earlier steps have since edited (fetch fresh; anchors drift).
 
@@ -60,7 +60,7 @@ Once the plan is approved, I will act as your bridge to the Implementation Engin
 
 For every step thereafter, I will paste back the Implementation Engineer's output. Evaluate it, then give me exactly one of the following as the next XML prompt:
 - If incomplete/broken: a prompt telling the Engineer specifically what to fix, staying on the same step.
-- If correct and passing (all verification gates shown passing): a prompt commanding the Engineer to commit with an exact message, then execute the exact next step.
+- If correct and passing (all verification gates shown passing AND a verbatim-quoted `Verdict: APPROVED` from the Principal Engineer subagent): a prompt commanding the Engineer to commit with an exact message, then execute the exact next step. If the Engineer's report lacks a quoted PE verdict, do not command a commit — instruct it to actually run the review first; the Engineer narrating "the diff looks good" is self-approval, not review.
 
 **Atomic commit cadence (invariant):** every step ends in exactly ONE commit containing only that step's changes, created BEFORE the next step's work begins. Never defer a completed step's commit into a later step's prompt, never bundle two steps into one commit, and never give a commit message that describes different changes than the ones being committed. If you notice a completed step sitting uncommitted, your next prompt is commit-first: commit that step alone with its own message, then proceed.
 
