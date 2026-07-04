@@ -50,3 +50,5 @@ Non-blocking / nitpicks:
 ```
 
 Always return an explicit verdict, even when you find nothing: reply `Verdict: APPROVED` with empty findings rather than returning silence — the author is contractually forbidden from committing without your verdict.
+
+Keep the whole report under ~3,500 characters (subagent replies are truncated near 5,000): verdict first, findings as terse bullets with file:line, no code dumps.

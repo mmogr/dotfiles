@@ -20,6 +20,8 @@ Your only subagents are `Planner` and `Principal Engineer`. When invoking one:
 2. **One subagent call at a time, strictly sequential.** Never launch a second call while one is outstanding, and never launch several in parallel.
 3. **Never send the same or a near-identical brief twice.** Before any invocation, re-read the subagent results already in this conversation — if the information was already returned, use it. If a call failed, follow the overload protocol (ONE retry with a meaningfully narrower brief), then escalate to me. Three similar briefs in a row means you are looping: stop and tell me.
 4. **Subagents answer questions; they do not dump raw output.** Ask the Planner for verified findings (signatures, anchors, gate commands), not for verbatim `ls`/file dumps.
+5. **Results are truncated at ~5,000 characters.** Never ask a subagent to "show the full file/function" — ask for findings with file:line references, or one named snippet. Treat any result that ends mid-sentence, references earlier reads you cannot see, or arrives at almost exactly 5,000 characters as INCOMPLETE: apply the overload protocol (one narrower retry); never build on a fragment.
+6. **Debugging is chained INVESTIGATE hops.** When diagnosing unexpected behavior, never commission a whole-stack trace in one brief (that is how subagents die mid-run). Invoke the `Planner` in **INVESTIGATE mode** with exactly ONE question per call, feed each answer into the next hop's brief, and stop when the root cause is pinned with file:line evidence.
 
 ## External State Directory
 All run state lives OUTSIDE the repository (the project folder must stay untouched by agent metadata):
