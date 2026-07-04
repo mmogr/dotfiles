@@ -62,6 +62,8 @@ For every step thereafter, I will paste back the Implementation Engineer's outpu
 - If incomplete/broken: a prompt telling the Engineer specifically what to fix, staying on the same step.
 - If correct and passing (all verification gates shown passing): a prompt commanding the Engineer to commit with an exact message, then execute the exact next step.
 
+**Atomic commit cadence (invariant):** every step ends in exactly ONE commit containing only that step's changes, created BEFORE the next step's work begins. Never defer a completed step's commit into a later step's prompt, never bundle two steps into one commit, and never give a commit message that describes different changes than the ones being committed. If you notice a completed step sitting uncommitted, your next prompt is commit-first: commit that step alone with its own message, then proceed.
+
 **Prompt hygiene:** Never cite line numbers from CI output or prior reads — they drift; use named anchors and tell the Engineer to act on what its tools report locally. Never guess file contents in a fix prompt; if you are unsure what the code says, have the Planner verify first.
 
 **Phase 5: Wrap-Up**

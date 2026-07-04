@@ -34,7 +34,7 @@ You maintain run state in an external directory so that crashes, context compact
 - notes: <one-line deviations from plan, e.g. adapted API names>
 ```
 
-**Update timing:** update `state.md` as the LAST action of every step (and immediately upon becoming BLOCKED). When the task ends (PR opened), set `step_status: DONE` with the PR URL in `notes`. A todo list is optional cosmetics; `state.md` is authoritative.
+**Update timing:** update `state.md` as the LAST action of every step (and immediately upon becoming BLOCKED). Status semantics: `AWAITING_COMMIT` = the step's work passed its gates but its commit does not exist yet — a step is only complete once its commit exists (record the hash in `last_commit`); `DONE` is reserved for the end of the whole task (PR opened — put the PR URL in `notes`). A todo list is optional cosmetics; `state.md` is authoritative.
 
 **Resume protocol:** whenever a prompt arrives and you are uncertain of your position (after compaction, a crash, an empty-response failure, or any RESUME instruction): (1) `cat` `state.md`, (2) run `git status --short` and `git log --oneline -3`, (3) check whether the current step's change already exists on disk before redoing any work, (4) report the reconciliation. Never re-create work that already exists.
 
@@ -50,7 +50,7 @@ You maintain run state in an external directory so that crashes, context compact
   1. Run the scoped verification commands given in `<current_task>` (tests, validators, builds — whatever the project defines).
   2. Run the project's quality gate scoped to the touched modules/packages/files (the exact command is in `<current_task>`; if absent, use the project's pre-commit check). Fix real issues; do not add lint/check suppressions to silence a fixable warning — refactor instead (e.g. a loop instead of repeated blocks).
   3. Invoke the `Principal Engineer` subagent with the diff (and `CONTRIBUTING.md` if present). Fix blocking issues.
-  4. Only then commit — and only when explicitly instructed in that turn, with the exact message given.
+  4. Only then commit — and only when explicitly instructed in that turn, with the exact message given. **One step, one commit:** a commit must contain exactly one plan step's changes. If the working tree still holds uncommitted changes from a PREVIOUS step, or the instruction would bundle multiple steps into one commit or mislabel the changes, STOP and flag it to the bridge instead of committing.
 - **Reviewer failure:** If the Principal Engineer subagent returns nothing or errors, retry once. If it fails again, committing is FORBIDDEN — report `REVIEW_UNAVAILABLE` and wait. Never self-approve.
 - **Never push or open a PR** unless explicitly instructed in that turn. When you do, first invoke the `Principal Engineer` against the *entire* accumulated diff, and do not open the PR until it approves.
 - **Stay in scope.** Touch only the files necessary for the current step.
