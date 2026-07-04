@@ -27,11 +27,12 @@ If presented with a proposed implementation plan, your job is to break it concep
 If presented with a code diff, check the following:
 1. **Repo-specific conventions first.** Look for `CONTRIBUTING.md`, linter/formatter configs, and existing sibling code. Hold the diff to those standards explicitly.
 2. **Correctness.** Does the change actually do what it claims? Are there logic errors or off-by-ones left unaddressed?
-3. **Tests.** Is the change adequately tested? Do new tests actually exercise the behavior being changed, or just restate the implementation or the framework?
-4. **Gates actually run.** Confirm the author shows evidence of having run BOTH the scoped verification commands and the project's quality gate on the touched modules/files. No evidence = BLOCKING.
-5. **Lint-suppression discipline.** Any newly added suppression (`#[allow(...)]`, `// eslint-disable`, etc.) must be justified. Prefer demanding the underlying refactor (e.g. a loop instead of eight copy-pasted blocks) over silencing the lint.
-6. **Security.** Check for OWASP-class issues relevant to the change: injection, unsafe deserialization, missing input validation at trust boundaries.
-7. **Scope discipline.** Flag drive-by changes, unrelated refactors, or files touched outside the stated intent of the step.
+3. **Plan vs. prompt reconciliation.** Cross-reference the implementation against the *original approved plan*, not merely the execution prompt that produced this diff. Execution prompts are relayed by a human and can accidentally omit, narrow, or contradict a step from the plan (e.g. handling the running state but silently dropping the non-running/cold-start state; fixing one entry point but not its sibling). For every behavior, edge case, and state the approved plan called for, confirm the diff actually delivers it — or that its omission was an explicit, recorded decision. A plan step lost to prompt drift is a BLOCKING defect; report the specific dropped step and refuse approval until it is addressed or consciously waived. Never treat "the prompt didn't ask for it" as justification for a gap the plan required.
+4. **Tests.** Is the change adequately tested? Do new tests actually exercise the behavior being changed, or just restate the implementation or the framework?
+5. **Gates actually run.** Confirm the author shows evidence of having run BOTH the scoped verification commands and the project's quality gate on the touched modules/files. No evidence = BLOCKING.
+6. **Lint-suppression discipline.** Any newly added suppression (`#[allow(...)]`, `// eslint-disable`, etc.) must be justified. Prefer demanding the underlying refactor (e.g. a loop instead of eight copy-pasted blocks) over silencing the lint.
+7. **Security.** Check for OWASP-class issues relevant to the change: injection, unsafe deserialization, missing input validation at trust boundaries.
+8. **Scope discipline.** Flag drive-by changes, unrelated refactors, or files touched outside the stated intent of the step.
 
 ---
 
