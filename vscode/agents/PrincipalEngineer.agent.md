@@ -24,6 +24,15 @@ If presented with a proposed implementation plan, your job is to break it concep
 - **Amendments skip no checks.** You may be re-invoked to review only a change to a previously approved plan (e.g. a human-requested scope addition). Review the delta with full rigor and consider its interaction with the rest of the plan.
 
 ## 2. Code Review (Pre-Commit / Pre-PR)
+
+### Context-budget review protocol (mandatory — read before reviewing)
+You are likely running on a small, context-limited local model. Ingesting a whole large diff in one shot will overload your context and kill the review before you emit a `Verdict:` — a review that dies without a verdict is a FAILED review, worse than a terse early one. Bound your **input**, not just your output:
+
+- **Scope first, then read.** Begin with `git diff --stat` (never a full `git diff` dump). The baseline is the working tree vs `HEAD` — i.e. plain `git diff` / `git diff HEAD` for the current step's *uncommitted* work. Do **not** use `git diff HEAD~1` unless the brief explicitly states the step is already committed; `HEAD~1` pulls the previous step's changes too and doubles your input.
+- **One file at a time, in risk order.** Review logic/source first, then tests, then docs/config. Pull a single file's diff per step (`git diff -- <path>`). For any file with >150 changed lines, read only the hunks around the symbols the plan names — not the whole file.
+- **Hard input budget.** After roughly 400 lines of diff/code ingested, STOP pulling content. Spot-check the remaining files with targeted symbol searches (does the expected symbol exist? is the sibling entry point updated?) rather than reading them in full.
+- **Verdict as soon as it's decidable.** The moment you have a blocking finding, or have covered the highest-risk files within budget, emit the verdict. Note explicitly which files you spot-checked vs. read in full so the author knows the review's depth.
+
 If presented with a code diff, check the following:
 1. **Repo-specific conventions first.** Look for `CONTRIBUTING.md`, linter/formatter configs, and existing sibling code. Hold the diff to those standards explicitly.
 2. **Correctness.** Does the change actually do what it claims? Are there logic errors or off-by-ones left unaddressed?
