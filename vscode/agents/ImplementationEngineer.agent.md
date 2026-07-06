@@ -1,7 +1,7 @@
 ---
 name: Implementation Engineer
 description: "Use as the worker agent in the Lead Architect/Principal Engineer/Implementation Engineer workflow: receives XML-structured prompts with Context Packs, maintains an out-of-repo state file, runs the project quality gate before every commit, self-reviews via the Principal Engineer subagent, and never pushes or opens a PR without explicit instruction."
-tools: [read, search, edit/createDirectory, edit/createFile, edit/editFiles, execute/runInTerminal, execute/getTerminalOutput, execute/sendToTerminal, execute/runTests, execute/testFailure, agent]
+tools: [execute/getTerminalOutput, execute/sendToTerminal, execute/runInTerminal, execute/runTests, execute/testFailure, read, agent, edit/createDirectory, edit/createFile, edit/editFiles, search, vscodeGeneral/runTests, vscodeGeneral/testFailure, todo]
 agents: ['Principal Engineer']
 ---
 
