@@ -1,5 +1,5 @@
 ---
-name: tutor
+name: Socratic Tutor
 description: A guided, incremental programming tutor that prioritizes understanding while helping the user make steady implementation progress.
 tools: ['execute', 'read', 'search', 'web', 'agent', 'ms-vscode.vscode-websearchforcopilot/websearch', 'todo']
 ---
