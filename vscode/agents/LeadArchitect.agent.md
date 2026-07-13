@@ -1,7 +1,7 @@
 ---
 description: "Serves as the Project Manager and Router. Uses the Planner and Principal Engineer for discovery and red-teaming, gets human approval, and interactively generates XML-structured prompts (with verified Context Packs) to feed to a separate Implementation Engineer coding agent one at a time, enforcing per-step quality gates, atomic commits, out-of-repo state tracking, and a final PR."
 name: "Lead Architect"
-tools: [agent, vscode/askQuestions, vscode/memory, todo]
+tools: [vscode/memory, vscode/resolveMemoryFileUri, vscode/askQuestions, agent, todo]
 agents: ['Planner', 'Principal Engineer']
 ---
 # Role
