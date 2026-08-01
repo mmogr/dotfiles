@@ -78,6 +78,25 @@ RUN mamba env update -n base -f /tmp/environment.yml && \
     mamba clean --all -f -y && \
     python -m sos_notebook.install
 
-# ── 6. Build-time sanity check ───────────────────────────────────────────────
+# ── 6. Root layer: Quarto CLI ────────────────────────────────────────────────
+# Resolves the actual latest release tag via the GitHub API instead of pinning
+# a version here, since a hardcoded version would silently go stale.
+# dpkg --print-architecture picks the right asset (amd64/arm64) for the build host.
+USER root
+RUN QUARTO_VERSION=$(curl -sL https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest \
+        | grep -m1 '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/') && \
+    QUARTO_ARCH=$(dpkg --print-architecture) && \
+    curl -sL "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.deb" \
+        -o /tmp/quarto.deb && \
+    apt-get update --quiet && \
+    apt-get install --yes --no-install-recommends /tmp/quarto.deb && \
+    apt-get clean && \
+    rm -rf /tmp/quarto.deb /var/lib/apt/lists/*
+
+# ── 7. Jovyan layer: TinyTeX (minimal LaTeX distribution, needed for PDF output) ──
+USER ${NB_UID}
+RUN quarto install tinytex --no-prompt
+
+# ── 8. Build-time sanity check ───────────────────────────────────────────────
 # Fails the build immediately if any kernel was not registered correctly.
-RUN jupyter kernelspec list
+RUN jupyter kernelspec list && quarto check
