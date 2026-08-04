@@ -83,8 +83,15 @@ RUN mamba env update -n base -f /tmp/environment.yml && \
 # a version here, since a hardcoded version would silently go stale.
 # dpkg --print-architecture picks the right asset (amd64/arm64) for the build host.
 USER root
-RUN QUARTO_VERSION=$(curl -sL https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest \
-        | grep -m1 '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/') && \
+# Piping curl straight into `grep -m1` is unsafe under this image's
+# `SHELL ["/bin/bash", "-o", "pipefail", "-c"]`: grep -m1 exits as soon as it
+# finds the match, closing the pipe while curl is still writing the (large,
+# many-asset) release JSON, so curl dies with exit 23 (broken pipe) and
+# pipefail fails the whole RUN. Write to a file first so curl always finishes.
+RUN curl -sL https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest \
+        -o /tmp/quarto-release.json && \
+    QUARTO_VERSION=$(grep -m1 '"tag_name"' /tmp/quarto-release.json | sed -E 's/.*"v?([^"]+)".*/\1/') && \
+    rm -f /tmp/quarto-release.json && \
     QUARTO_ARCH=$(dpkg --print-architecture) && \
     curl -sL "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.deb" \
         -o /tmp/quarto.deb && \
