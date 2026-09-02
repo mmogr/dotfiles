@@ -1,3 +1,17 @@
+# Core tools installed on every machine by `just mise::install`.
+# Per-machine extras (e.g. ruby) live in ~/.config/mise/conf.d/local.toml,
+# written by `just profile` and never tracked.
+#
+# Versions are exact so Renovate can open bump PRs; `just mise::upgrade` is
+# the manual path. The explicit aqua: backend names are what Renovate reads.
+#
+# neovim must be >= 0.12 for the vim.pack-based config in nvim/. If a release
+# ever lags behind what init.lua needs, switch it to "nightly".
+
 [tools]
 node = "22"
-ruby = "3"
+rust = "stable"
+"aqua:cli/cli" = "2.99.0"                 # gh
+"aqua:jesseduffield/lazygit" = "0.64.1"
+"aqua:direnv/direnv" = "2.37.1"
+"aqua:neovim/neovim" = "0.12.5"
