@@ -1,21 +1,13 @@
-# Podman + podman-compose — install and configure rootless socket
+# Podman + podman-compose — install and configure the rootless socket
 #
-# Linux: install via pm, enable the rootless user socket
-# macOS: install via brew, initialize and start a podman machine (required on macOS)
+# Linux: install via the package manager, enable the rootless user socket
+# macOS: install via brew, then initialize and start a podman machine (required on macOS)
 
 install:
     #!/usr/bin/env sh
     set -e
     . "{{justfile_directory()}}/lib/detect.sh"
-    if command -v pacman > /dev/null 2>&1; then
-        $PM podman podman-compose
-    elif command -v apt > /dev/null 2>&1; then
-        $PM podman podman-compose
-    elif command -v brew > /dev/null 2>&1; then
-        brew install podman podman-compose
-    else
-        echo "Unsupported platform for podman install" >&2 && exit 1
-    fi
+    $PM podman podman-compose
 
 # Enable the rootless Podman socket (Linux only — not needed on macOS)
 enable-socket:
