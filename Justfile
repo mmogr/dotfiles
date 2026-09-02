@@ -175,7 +175,8 @@ check:
         FAILED=1
     fi
 
-    # 2. Stow packages — dry-run restow; a non-zero exit or conflict output means out of sync
+    # 2. Stow packages — dry-run restow into $HOME (the same explicit target
+    #    stow-safe.sh uses); a non-zero exit or conflict output means out of sync
     check_stow() {
         # $1 label, then the stow arguments
         label="$1"; shift
@@ -189,7 +190,7 @@ check:
         fi
     }
     for PKG in {{packages}}; do
-        check_stow "$PKG" "$PKG"
+        check_stow "$PKG" -t "$HOME" "$PKG"
     done
 
     # 3. vscode/agents — desktop tier, custom target; only checked once that target exists

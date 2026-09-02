@@ -56,8 +56,13 @@ case "$STACK" in
         ;;
 esac
 
+# The rootless socket is what a docker-compose provider talks to. If user
+# systemd is not available (containers, CI) carry on: podman-compose does not
+# need the socket, and anything that does will fail with its own message.
 if [ "$(uname -s)" = "Linux" ]; then
-    systemctl --user start podman.socket
+    if ! systemctl --user start podman.socket 2>/dev/null; then
+        echo "podman-stack: could not start podman.socket (no user systemd?) — continuing" >&2
+    fi
 fi
 
 exec podman compose "$@"
