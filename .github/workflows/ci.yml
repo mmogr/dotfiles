@@ -103,7 +103,7 @@ jobs:
   fresh-machine:
     name: "full setup on a bare ubuntu:24.04 (no TTY)"
     runs-on: ubuntu-latest
-    container: ubuntu:24.04
+    container: ubuntu:26.04
     timeout-minutes: 30
     steps:
       - name: The README prerequisites, and nothing else
