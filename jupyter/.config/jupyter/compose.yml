@@ -7,7 +7,8 @@ services:
     container_name: jupyterlab
     restart: unless-stopped
     ports:
-      - "8890:8888"
+      # Loopback only — token/password auth is disabled below.
+      - "127.0.0.1:8890:8888"
     extra_hosts:
       - "host.containers.internal:host-gateway"
     environment:
@@ -26,6 +27,7 @@ services:
       - SQLITE_URL=sqlite:////home/jovyan/work/local.db
     volumes:
       # :U lets Podman automatically remap the UID/GID for rootless operation.
+      # Host dirs are created by podman-stack (behind nbup/nbdown) before `up`.
       - ${HOME}/.local/share/jupyter/notebooks:/home/jovyan/work:U
       # Persistent conda environments. Any env created inside the container
       # (conda create -n myenv python ipykernel) survives down/up cycles.

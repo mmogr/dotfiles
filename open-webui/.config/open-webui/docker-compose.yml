@@ -1,16 +1,17 @@
+# Open WebUI. Image is pinned to a release tag (Renovate opens bump PRs).
+# Data dir is created by podman-stack (the helper behind uiup/uidown).
 services:
   open-webui:
-    image: ghcr.io/open-webui/open-webui:main
+    image: ghcr.io/open-webui/open-webui:v0.11.3
     container_name: open-webui
     restart: always
     ports:
-      - "3000:8080"
+      # Loopback only — WEBUI_AUTH is off below.
+      - "127.0.0.1:3000:8080"
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.containers.internal:host-gateway"
     env_file:
       - .env
-    labels:
-      - "io.containers.autoupdate=registry"
     environment:
       - SCARF_NO_ANALYTICS=true
       - DO_NOT_TRACK=true

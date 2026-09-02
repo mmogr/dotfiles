@@ -1,0 +1,63 @@
+#!/usr/bin/env sh
+# podman-stack — run `podman compose` for one of the dotfiles stacks.
+#
+#   podman-stack <dev-db|jupyter|open-webui> <compose args...>
+#   e.g. podman-stack dev-db up -d postgres
+#
+# Before delegating to podman compose it:
+#   - starts the rootless podman socket on Linux (on macOS the podman machine
+#     owns the socket — see `just podman::machine-init`)
+#   - creates the stack's bind-mount source directories; host data lives under
+#     ~/.local/share and is never tracked
+#   - adds the AMD GPU overlay for open-webui when /dev/dri and /dev/kfd exist
+#
+# The short commands next to this script (pgup, nbup, uiup, ...) are wrappers.
+set -e
+
+STACK="$1"
+if [ -z "$STACK" ]; then
+    echo "usage: podman-stack <dev-db|jupyter|open-webui> <compose args...>" >&2
+    exit 1
+fi
+shift
+
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}"
+# The compose files hardcode this path too: podman-compose cannot expand a
+# nested default like ${XDG_DATA_HOME:-${HOME}/.local/share}.
+DATA="$HOME/.local/share"
+
+ensure_dirs() {
+    for d in "$@"; do
+        mkdir -p "$d"
+    done
+}
+
+case "$STACK" in
+    dev-db)
+        set -- -f "$CONF/dev-db/compose.yml" "$@"
+        ensure_dirs "$DATA/dev-db/postgres" "$DATA/dev-db/mysql"
+        ;;
+    jupyter)
+        set -- -f "$CONF/jupyter/compose.yml" "$@"
+        ensure_dirs "$DATA/jupyter/notebooks" "$DATA/jupyter/conda-envs" \
+                    "$HOME/.cache/huggingface" "$HOME/.local/src/uninotes" "$HOME/Downloads"
+        ;;
+    open-webui)
+        if [ -e /dev/dri ] && [ -e /dev/kfd ]; then
+            set -- -f "$CONF/open-webui/docker-compose.yml" -f "$CONF/open-webui/docker-compose.gpu.yml" "$@"
+        else
+            set -- -f "$CONF/open-webui/docker-compose.yml" "$@"
+        fi
+        ensure_dirs "$DATA/open-webui/data"
+        ;;
+    *)
+        echo "podman-stack: unknown stack '$STACK' (expected dev-db, jupyter, or open-webui)" >&2
+        exit 1
+        ;;
+esac
+
+if [ "$(uname -s)" = "Linux" ]; then
+    systemctl --user start podman.socket
+fi
+
+exec podman compose "$@"
