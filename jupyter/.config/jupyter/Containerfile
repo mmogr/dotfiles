@@ -12,7 +12,7 @@ FROM quay.io/jupyter/minimal-notebook:ubuntu-22.04
 # ── Pinned versions ───────────────────────────────────────────────────────────
 # Each ARG carries a renovate comment so version bumps arrive as PRs.
 # renovate: datasource=github-releases depName=dflib/jjava versioning=loose
-ARG JJAVA_VERSION=1.0-a7
+ARG JJAVA_VERSION=1.0-M3
 # renovate: datasource=crate depName=evcxr_jupyter
 ARG EVCXR_VERSION=0.22.0
 # renovate: datasource=github-releases depName=quarto-dev/quarto-cli
