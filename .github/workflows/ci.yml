@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: shellcheck + just syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck and just
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y shellcheck
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: shellcheck (POSIX sh files)
+        run: shellcheck -S warning -s sh lib/*.sh shell/.local/bin/* shell/.config/shell/*.sh
+      - name: shellcheck (bash files)
+        run: shellcheck -S warning -s bash bash/.bashrc bash/.bash_profile
+      - name: just --list parses the Justfile and every module
+        run: just --list
+
+  bootstrap:
+    name: stow + mise on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install just and stow
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            brew install stow
+          else
+            sudo apt-get update -q
+            sudo apt-get install -y stow
+          fi
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Stow all packages (no TTY, so conflicts are backed up automatically)
+        run: just stow-all
+      - name: Verify stow state and repo cleanliness
+        run: just check
+      - name: Install mise and the core tools
+        run: just mise::install
+      - name: Smoke-test the mise-managed tools
+        run: |
+          MISE="$HOME/.local/bin/mise"
+          "$MISE" x -- nvim --version | head -1
+          "$MISE" x -- gh --version | head -1
+          "$MISE" x -- lazygit --version
+          "$MISE" x -- direnv --version
+          "$MISE" x -- node --version
+          "$MISE" x -- cargo --version
+      - name: Shell configs parse
+        run: |
+          bash -n bash/.bashrc bash/.bash_profile shell/.config/shell/env.sh
+          bash -c 'HOME=$HOME; . bash/.bashrc && echo "bashrc sourced OK"'

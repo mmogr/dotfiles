@@ -1,0 +1,37 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 6am on monday"],
+  "minimumReleaseAge": "3 days",
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "One weekly PR for everything that is not a major bump",
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "all non-major updates",
+      "groupSlug": "all-minor-patch"
+    },
+    {
+      "description": "Jupyter base image uses a floating tag; pin and refresh its digest instead",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["quay.io/jupyter/minimal-notebook"],
+      "pinDigests": true
+    },
+    {
+      "description": "JJava tags look like 1.0-a8, which is not semver",
+      "matchPackageNames": ["dflib/jjava"],
+      "versioning": "loose"
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "ARG <NAME>_VERSION=<value> lines in the Containerfile, each preceded by a renovate comment",
+      "customType": "regex",
+      "managerFilePatterns": ["/(^|/)Containerfile$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[a-z-]+))?\\s+ARG [A-Z_]+_VERSION=(?<currentValue>[^\\s]+)"
+      ],
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    }
+  ]
+}

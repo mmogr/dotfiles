@@ -29,6 +29,18 @@
 [pull]
     rebase = false
 
+[fetch]
+    prune = true
+
+[push]
+    autoSetupRemote = true
+
+[rerere]
+    enabled = true
+
+[diff]
+    algorithm = histogram
+
 # ── Useful aliases ────────────────────────────────────────────────────────────
 [alias]
     lg   = log --oneline --graph --decorate --all
