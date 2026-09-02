@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install shellcheck and just
         run: |
           sudo apt-get update -q
@@ -50,7 +50,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install just and stow (plus podman-compose on Linux, for the compose check)
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then
@@ -111,7 +111,7 @@ jobs:
           apt-get update -q
           apt-get install -y --no-install-recommends ca-certificates curl git sudo stow bzip2
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag "$JUST_VERSION" --to /usr/local/bin
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: "just setup (asks nothing: no terminal means the core tier only)"
         run: just setup
       - name: A core-only profile was written and honoured
