@@ -9,6 +9,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Pinned so the just installer downloads directly instead of asking the
+  # GitHub API for "latest" (that anonymous lookup gets rate-limited to 403
+  # on shared runners). macOS uses brew, which needs no lookup.
+  # renovate: datasource=github-releases depName=casey/just
+  JUST_VERSION: "1.58.0"
+
 jobs:
   lint:
     name: shellcheck + just syntax
@@ -20,7 +27,7 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y shellcheck
-          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "$HOME/.local/bin"
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag "$JUST_VERSION" --to "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: shellcheck (POSIX sh files)
         run: shellcheck -S warning -s sh lib/*.sh shell/.local/bin/* shell/.config/shell/*.sh
@@ -47,13 +54,13 @@ jobs:
       - name: Install just and stow (plus podman-compose on Linux, for the compose check)
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then
-            brew install stow
+            brew install stow just
           else
             sudo apt-get update -q
             sudo apt-get install -y stow podman-compose
+            curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag "$JUST_VERSION" --to "$HOME/.local/bin"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           fi
-          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Seed a conflicting file so the backup path runs
         run: |
           mkdir -p "$HOME/.config/nvim"
@@ -103,7 +110,7 @@ jobs:
         run: |
           apt-get update -q
           apt-get install -y --no-install-recommends ca-certificates curl git sudo stow bzip2
-          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag "$JUST_VERSION" --to /usr/local/bin
       - uses: actions/checkout@v5
       - name: "just setup (asks nothing: no terminal means the core tier only)"
         run: just setup
