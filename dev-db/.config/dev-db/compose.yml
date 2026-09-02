@@ -15,7 +15,7 @@ services:
       - ${HOME}/.local/share/dev-db/postgres:/var/lib/postgresql/data:U
 
   mysql:
-    image: docker.io/library/mysql:8.4
+    image: docker.io/library/mysql:26.7
     container_name: dev-mysql
     ports:
       - "127.0.0.1:3306:3306"
