@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Pinned so the just installer downloads directly instead of asking the
+  # GitHub API for "latest" (that anonymous lookup gets rate-limited to 403
+  # on shared runners). macOS uses brew, which needs no lookup.
+  # renovate: datasource=github-releases depName=casey/just
+  JUST_VERSION: "1.58.0"
+
+jobs:
+  lint:
+    name: shellcheck + just syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install shellcheck and just
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y shellcheck
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag "$JUST_VERSION" --to "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: shellcheck (POSIX sh files)
+        run: shellcheck -S warning -s sh lib/*.sh shell/.local/bin/* shell/.config/shell/*.sh
+      - name: shellcheck (bash files)
+        run: shellcheck -S warning -s bash bash/.bashrc bash/.bash_profile
+      - name: just parses the Justfile and every module
+        run: just --list
+      - name: Dry-run every recipe (catches broken interpolation in recipe bodies)
+        run: |
+          for r in $(just --summary); do
+            just -n "$r" > /dev/null 2>&1 || { echo "dry-run failed: $r"; just -n "$r"; exit 1; }
+          done
+
+  bootstrap:
+    name: stow + mise on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install just and stow (plus podman-compose on Linux, for the compose check)
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            brew install stow just
+          else
+            sudo apt-get update -q
+            sudo apt-get install -y stow podman-compose
+            curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag "$JUST_VERSION" --to "$HOME/.local/bin"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+      - name: Seed a conflicting file so the backup path runs
+        run: |
+          mkdir -p "$HOME/.config/nvim"
+          echo "pre-existing config" > "$HOME/.config/nvim/init.lua"
+      - name: Stow all packages (no TTY, so conflicts are backed up automatically)
+        run: just stow-all
+      - name: The conflict was backed up and replaced by a link into the repo
+        run: |
+          test -f "$HOME/.config/nvim/init.lua.bak"
+          test -L "$HOME/.config/nvim/init.lua"
+          test -L "$HOME/.bashrc"
+          test -L "$HOME/.config/mise/config.toml" || test -L "$HOME/.config/mise"
+          readlink -f "$HOME/.config/nvim/init.lua" | grep -q "$GITHUB_WORKSPACE/nvim/"
+      - name: Verify stow state and repo cleanliness
+        run: just check
+      - name: Install mise and the core tools
+        run: just mise::install
+      - name: Smoke-test the mise-managed tools
+        run: |
+          MISE="$HOME/.local/bin/mise"
+          "$MISE" x -- nvim --version | head -1
+          "$MISE" x -- gh --version | head -1
+          "$MISE" x -- lazygit --version
+          "$MISE" x -- direnv --version
+          "$MISE" x -- node --version
+          "$MISE" x -- cargo --version
+      - name: Shell configs parse and source
+        run: |
+          bash -n bash/.bashrc bash/.bash_profile shell/.config/shell/env.sh
+          bash -c '. ~/.bashrc && echo "bashrc sourced OK"'
+      - name: Compose files parse through podman-stack (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          just open-webui::secrets
+          for stack in dev-db jupyter open-webui; do
+            echo "== $stack"
+            "$HOME/.local/bin/podman-stack" "$stack" config > /dev/null
+          done
+
+  fresh-machine:
+    name: "full setup on a bare ubuntu:24.04 (no TTY)"
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    timeout-minutes: 30
+    steps:
+      - name: The README prerequisites, and nothing else
+        run: |
+          apt-get update -q
+          apt-get install -y --no-install-recommends ca-certificates curl git sudo stow bzip2
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag "$JUST_VERSION" --to /usr/local/bin
+      - uses: actions/checkout@v5
+      - name: "just setup (asks nothing: no terminal means the core tier only)"
+        run: just setup
+      - name: A core-only profile was written and honoured
+        run: |
+          cat "$HOME/.config/dotfiles/profile"
+          grep -q '^DESKTOP=no' "$HOME/.config/dotfiles/profile"
+          grep -q '^CONTAINERS=no' "$HOME/.config/dotfiles/profile"
+          test -f "$HOME/.config/mise/conf.d/local.toml"
+          test -f "$HOME/.gitconfig-local"
+          test -L "$HOME/.bashrc"
+      - name: Rust came up through mise with no pre-existing rustup
+        run: |
+          MISE="$HOME/.local/bin/mise"
+          "$MISE" x -- cargo --version
+          "$MISE" x -- rustc --version
+          "$MISE" x -- nvim --version | head -1
+          "$MISE" x -- node --version
+      - name: conda and the shells are installed
+        run: |
+          "$HOME/.local/share/miniconda3/bin/conda" --version
+          fish --version
+          zsh --version
+          bash -c '. ~/.bashrc && echo "bashrc sourced OK"'
+      - name: A second setup is a silent no-op
+        run: just setup

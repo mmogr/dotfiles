@@ -2,11 +2,12 @@
 # Primary path (AUR/CachyOS): /opt/miniconda3
 # Fallback path (manual/macOS): ~/.local/share/miniconda3
 
-# Install via AUR using paru (primary — CachyOS/Arch; managed by paru -Syu)
+# Install via the AUR (primary — CachyOS/Arch; kept current by paru/yay -Syu)
 install-aur:
     #!/usr/bin/env sh
     set -e
-    paru -S --noconfirm miniconda3
+    . "{{justfile_directory()}}/lib/detect.sh"
+    aur_install miniconda3
     # Prevent base env from hijacking system Python (user-level setting)
     /opt/miniconda3/bin/conda config --set auto_activate_base false
     echo "miniconda3 installed to /opt/miniconda3"
@@ -37,20 +38,20 @@ install-manual:
     echo "miniconda3 installed to ~/.local/share/miniconda3"
     echo "Run: just conda::init"
 
-# Primary install — AUR on Arch/CachyOS (paru), manual installer elsewhere
+# Primary install — AUR on Arch/CachyOS, manual installer elsewhere
 install:
     #!/usr/bin/env sh
     set -e
+    . "{{justfile_directory()}}/lib/detect.sh"
     if [ -x /opt/miniconda3/bin/conda ] || [ -x "$HOME/.local/share/miniconda3/bin/conda" ]; then
         echo "conda already installed — skipping (run: just conda::init to verify)"
         exit 0
     fi
-    if command -v paru >/dev/null 2>&1; then
-        paru -S --noconfirm miniconda3
+    if [ "$OS" = arch ]; then
+        aur_install miniconda3
         /opt/miniconda3/bin/conda config --set auto_activate_base false
         echo "miniconda3 installed to /opt/miniconda3 via AUR"
     else
-        echo "paru not found — falling back to manual Miniconda installer"
         just conda::install-manual
     fi
     echo "Run: just conda::init"

@@ -4,10 +4,12 @@
 # Stow a package. If real (non-symlink) files would conflict, prompt:
 #   [y] back them up to .bak and stow
 #   [N] skip this package
+# Without a terminal on stdin the backup happens automatically.
 #
-# target-dir is optional and overrides stow's default target (normally the
-# parent of <dotfiles-dir>, i.e. $HOME). Use it for packages whose real
-# destination lives outside the usual $HOME-relative layout.
+# target-dir is optional and defaults to $HOME. It is always passed to stow
+# explicitly, so the repo can live anywhere (stow's own default, the parent of
+# <dotfiles-dir>, is only $HOME when the repo is cloned to ~/.dotfiles). Use it
+# for packages whose real destination lives outside the $HOME-relative layout.
 #
 # Usage from a mod.just stow recipe:
 #   stow:
@@ -34,23 +36,24 @@ else
 fi
 
 stow_dry_run() {
-    if [ -n "$TARGET_DIR" ]; then
-        (cd "$DOTFILES" && stow -n -R -t "$TARGET_DIR" "$PKG") 2>&1
-    else
-        (cd "$DOTFILES" && stow -n -R "$PKG") 2>&1
-    fi
+    (cd "$DOTFILES" && stow -n -R -t "$BASE" "$PKG") 2>&1
 }
 
 stow_real_run() {
-    if [ -n "$TARGET_DIR" ]; then
-        (cd "$DOTFILES" && stow -R -t "$TARGET_DIR" "$PKG")
-    else
-        (cd "$DOTFILES" && stow -R "$PKG")
-    fi
+    (cd "$DOTFILES" && stow -R -t "$BASE" "$PKG")
 }
 
-# Dry-run to detect conflicts (real files, not symlinks)
-conflicts=$(stow_dry_run | grep "cannot stow" || true)
+# Dry-run to detect conflicts (real files, not symlinks). The wording differs
+# between stow releases, so match both:
+#   2.3.x:  * existing target is neither a link nor a directory: <path>
+#   2.4.x:  * cannot stow <pkg>/<path> over existing target <path> since neither a link nor a directory ...
+conflict_paths() {
+    sed -n \
+        -e 's/.*existing target is neither a link nor a directory: //p' \
+        -e 's/.*over existing target \(.*\) since .*/\1/p'
+}
+# -R (restow) reports each conflict for both the unstow and stow phases, hence sort -u.
+conflicts=$(stow_dry_run | conflict_paths | sort -u || true)
 
 if [ -z "$conflicts" ]; then
     stow_real_run
@@ -59,15 +62,22 @@ fi
 
 echo ""
 echo "Package '$PKG': conflicting files already exist:"
-echo "$conflicts" | sed 's/.*existing target //; s/ since.*//' | while IFS= read -r rel; do
+echo "$conflicts" | while IFS= read -r rel; do
     echo "  $BASE/$rel"
 done
-printf "Back up and overwrite? [y/N] "
-read -r answer
+if [ -t 0 ]; then
+    printf "Back up and overwrite? [y/N] "
+    read -r answer
+else
+    # No terminal (CI, piped setup): back up automatically. A backup is never
+    # destructive, and stopping here would hang a non-interactive bootstrap.
+    echo "No terminal attached — backing up automatically."
+    answer=y
+fi
 
 case "$answer" in
     y|Y)
-        echo "$conflicts" | sed 's/.*existing target //; s/ since.*//' | while IFS= read -r rel; do
+        echo "$conflicts" | while IFS= read -r rel; do
             target="$BASE/$rel"
             echo "  $target -> $target.bak"
             mv "$target" "$target.bak"

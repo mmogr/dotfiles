@@ -17,9 +17,13 @@ for _conda_prefix in /opt/miniconda3 $HOME/.local/share/miniconda3
 end
 
 # direnv — per-directory env var loading (must come after conda so conda env
-# activations triggered by .envrc work against the already-initialised conda)
+# activations triggered by .envrc work against the already-initialised conda).
+# direnv is installed by mise, whose PATH hook only runs at the first prompt,
+# so resolve it through mise when it is not on PATH yet.
 if command -q direnv
     direnv hook fish | source
+else if test -x $HOME/.local/bin/mise; and set -l direnv_bin ($HOME/.local/bin/mise which direnv 2>/dev/null)
+    $direnv_bin hook fish | source
 end
 
 # overwrite greeting

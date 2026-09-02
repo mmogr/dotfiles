@@ -6,3 +6,5 @@ open-webui/.config/open-webui/.env.local
 git/.gitconfig-local
 
 */.DS_Store
+# Per-machine mise tools — written by `just profile` into the stowed mise dir
+mise/.config/mise/conf.d/

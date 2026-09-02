@@ -1,7 +1,8 @@
 # ~/.bashrc — tracked in dotfiles, managed by stow
 
-# Source shared aliases
+# Shared aliases and environment (PATH, conda, direnv, mise) — see ~/.config/shell/
 [ -f "$HOME/.config/shell/aliases.sh" ] && . "$HOME/.config/shell/aliases.sh"
+[ -f "$HOME/.config/shell/env.sh" ] && . "$HOME/.config/shell/env.sh"
 
 # Prompt
 PS1='\u@\h:\w\$ '
@@ -10,34 +11,3 @@ PS1='\u@\h:\w\$ '
 HISTSIZE=10000
 HISTFILESIZE=20000
 HISTCONTROL=ignoredups:erasedups
-
-# PATH additions
-[ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
-[ -d "$HOME/.cargo/bin" ] && export PATH="$HOME/.cargo/bin:$PATH"
-
-# >>> conda initialize >>>
-# Tries AUR path (/opt/miniconda3) first, then manual install fallback
-for __conda_prefix in /opt/miniconda3 "$HOME/.local/share/miniconda3"; do
-    if [ -x "$__conda_prefix/bin/conda" ]; then
-        __conda_setup="$("$__conda_prefix/bin/conda" 'shell.bash' 'hook' 2>/dev/null)"
-        if [ $? -eq 0 ]; then
-            eval "$__conda_setup"
-        elif [ -f "$__conda_prefix/etc/profile.d/conda.sh" ]; then
-            . "$__conda_prefix/etc/profile.d/conda.sh"
-        else
-            export PATH="$__conda_prefix/bin:$PATH"
-        fi
-        break
-    fi
-done
-unset __conda_setup __conda_prefix
-# <<< conda initialize <<<
-
-# direnv — per-directory env var loading (must come after conda)
-if command -v direnv > /dev/null 2>&1; then
-    eval "$(direnv hook bash)"
-fi
-
-# mise — universal tool version manager (node, python, ruby, etc.)
-[ -x "$HOME/.local/bin/mise" ] && eval "$("$HOME/.local/bin/mise" activate bash)"
-

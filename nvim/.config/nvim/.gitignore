@@ -1,2 +1,0 @@
-# nvim-pack-lock.json is intentionally tracked so plugin versions are reproducible across machines.
-# Update intentionally with :PackUpdate inside nvim.

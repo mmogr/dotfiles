@@ -1,16 +1,8 @@
-# JupyterLab — stow config and create local notebook storage
-
-stow:
-    sh {{justfile_directory()}}/lib/stow-safe.sh {{justfile_directory()}} jupyter
-
-# Create local data directories under XDG data home (never tracked in git).
-# conda-envs is mounted into /opt/conda/envs inside the container so user-created
-# conda environments persist across container restarts.
-dirs:
-    mkdir -p "$HOME/.local/share/jupyter/notebooks" \
-             "$HOME/.local/share/jupyter/conda-envs"
+# JupyterLab polyglot image (config is stowed by `just stow-all`; data dirs are
+# created on demand by the podman-stack helper behind nbup/nbdown)
 
 # Build (or rebuild) the custom polyglot container image.
-# Only needed when the Containerfile changes; subsequent runs use the layer cache.
+# Only needed when the Containerfile or environment.yml changes; later runs use
+# the layer cache. Slow on first run (~15 min) because of the Rust/evcxr compile.
 build:
-    podman compose -f "$HOME/.config/jupyter/compose.yml" build
+    "$HOME/.local/bin/podman-stack" jupyter build

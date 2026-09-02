@@ -6,7 +6,17 @@
 # Envs:      nb_conda_kernels — any conda env with ipykernel auto-appears as kernel
 # Runtime:   Rootless Podman — jovyan (UID 1000) with :U volume remapping
 
+# Base image: Renovate pins and refreshes the digest for this tag (see renovate.json).
 FROM quay.io/jupyter/minimal-notebook:ubuntu-22.04
+
+# ── Pinned versions ───────────────────────────────────────────────────────────
+# Each ARG carries a renovate comment so version bumps arrive as PRs.
+# renovate: datasource=github-releases depName=dflib/jjava versioning=loose
+ARG JJAVA_VERSION=1.0-a7
+# renovate: datasource=crate depName=evcxr_jupyter
+ARG EVCXR_VERSION=0.22.0
+# renovate: datasource=github-releases depName=quarto-dev/quarto-cli
+ARG QUARTO_VERSION=1.10.18
 
 # ── 1. Root layer: system packages ───────────────────────────────────────────
 USER root
@@ -27,8 +37,7 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # ── 2. Root layer: install JJava kernel (dflib/jjava 1.0-a7) ─────────────────
 # Installed system-wide so the kernelspec is visible to the jovyan user.
-ARG JJAVA_VERSION=1.0-a7
-RUN curl -sL \
+RUN curl -fsSL \
         "https://github.com/dflib/jjava/releases/download/${JJAVA_VERSION}/jjava-${JJAVA_VERSION}-kernelspec.zip" \
         -o /tmp/jjava.zip && \
     unzip /tmp/jjava.zip -d /tmp/jjava && \
@@ -54,17 +63,17 @@ ENV RUSTUP_HOME=/home/jovyan/.rustup
 ENV CARGO_HOME=/home/jovyan/.cargo
 ENV PATH="/home/jovyan/.cargo/bin:${PATH}"
 
-RUN curl https://sh.rustup.rs -sSf | \
+RUN curl -fsSL https://sh.rustup.rs | \
     sh -s -- -y --default-toolchain stable --profile minimal && \
     rustup component add rust-src
 
 # ── 4. Jovyan layer: build and register evcxr_jupyter ────────────────────────
-# --locked pins to the exact Cargo.lock in the published crate for
-# reproducibility. rust-src (added above) is required for evcxr's incremental
-# compilation model. This layer is the expensive one (~15 min first build);
-# Docker/Podman cache keeps it fast on subsequent rebuilds unless Rust or
-# evcxr versions change.
-RUN cargo install --locked evcxr_jupyter && \
+# --version pins the crate (EVCXR_VERSION above) and --locked uses the exact
+# Cargo.lock published with it, so the build is reproducible. rust-src (added
+# above) is required for evcxr's incremental compilation model. This layer is
+# the expensive one (~15 min first build); the Docker/Podman cache keeps it
+# fast on later rebuilds unless the Rust or evcxr version changes.
+RUN cargo install --locked --version "${EVCXR_VERSION}" evcxr_jupyter && \
     evcxr_jupyter --install
 
 # ── 5. Jovyan layer: Python packages + SoS kernel registration ───────────────
@@ -79,14 +88,12 @@ RUN mamba env update -n base -f /tmp/environment.yml && \
     python -m sos_notebook.install
 
 # ── 6. Root layer: Quarto CLI ────────────────────────────────────────────────
-# Resolves the actual latest release tag via the GitHub API instead of pinning
-# a version here, since a hardcoded version would silently go stale.
-# dpkg --print-architecture picks the right asset (amd64/arm64) for the build host.
+# Pinned via QUARTO_VERSION above (Renovate bumps it). dpkg --print-architecture
+# picks the right asset (amd64/arm64) for the build host. curl -f makes a bad
+# version fail here rather than at apt install.
 USER root
-RUN QUARTO_VERSION=$(curl -sL https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest \
-        | grep -m1 '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/') && \
-    QUARTO_ARCH=$(dpkg --print-architecture) && \
-    curl -sL "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.deb" \
+RUN QUARTO_ARCH=$(dpkg --print-architecture) && \
+    curl -fsSL "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.deb" \
         -o /tmp/quarto.deb && \
     apt-get update --quiet && \
     apt-get install --yes --no-install-recommends /tmp/quarto.deb && \

@@ -1,11 +1,5 @@
-# Open WebUI — stow config, create data directories, and initialize secrets
-
-stow:
-    sh {{justfile_directory()}}/lib/stow-safe.sh {{justfile_directory()}} open-webui
-
-dirs:
-    mkdir -p "$HOME/.config/open-webui"
-    mkdir -p "$HOME/.local/share/open-webui/data"
+# Open WebUI — initialize local secrets (config is stowed by `just stow-all`;
+# the data dir is created on demand by the podman-stack helper behind uiup)
 
 # Copy .env.example to local .env (never overwrites an existing file)
 secrets:
