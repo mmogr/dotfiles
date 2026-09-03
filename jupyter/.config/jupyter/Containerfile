@@ -7,7 +7,7 @@
 # Runtime:   Rootless Podman — jovyan (UID 1000) with :U volume remapping
 
 # Base image: Renovate pins and refreshes the digest for this tag (see renovate.json).
-FROM quay.io/jupyter/minimal-notebook:ubuntu-22.04
+FROM quay.io/jupyter/minimal-notebook:ubuntu-22.04@sha256:1a71fc04b26ede434ef16bf25e323cbfa3d0e46469eb518d0fd9e5b9e312e869
 
 # ── Pinned versions ───────────────────────────────────────────────────────────
 # Each ARG carries a renovate comment so version bumps arrive as PRs.
