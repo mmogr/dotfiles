@@ -19,7 +19,7 @@ env:
 jobs:
   lint:
     name: shellcheck + just syntax
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-26.04, macos-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
@@ -102,7 +102,7 @@ jobs:
 
   fresh-machine:
     name: "full setup on a bare ubuntu:24.04 (no TTY)"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     container: ubuntu:26.04
     timeout-minutes: 30
     steps:
