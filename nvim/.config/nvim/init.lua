@@ -550,9 +550,14 @@ end
 -- Cursor/VS Code agent-mode equivalent: the model reads files, proposes
 -- inline diffs, you accept/reject hunks — all inside nvim.
 --
--- Endpoint: gglib proxy at 127.0.0.1:8080 (must be running: gglib proxy)
--- Model: auto-detected from gglib proxy at startup; use <leader>a? to switch.
---        Falls back to 'gglib-default' if proxy is not running.
+-- Endpoints (probed at startup, first one that answers becomes the default):
+--   gglib         local proxy at 127.0.0.1:8080 (gglib proxy), no auth
+--   gglib_remote  a paired machine's proxy via `gglib remote join --port 8180`;
+--                 authenticated with `gglib remote key --show` (never stored here).
+--                 Override the URL with $GGLIB_REMOTE_URL if joined on another port.
+-- Model: auto-detected from /v1/models at startup; use <leader>a? to switch.
+--        Image-generation models and text encoders are filtered out; reasoning
+--        models are preferred. Falls back to 'gglib-default' if nothing answers.
 --
 -- PLAN / EXECUTE mode toggle (hot-swaps avante.config at runtime):
 --   <leader>ap   PLAN MODE  — strips write/exec tools; model can only read,
@@ -568,7 +573,7 @@ end
 --   <leader>an   New ask (fresh chat)
 -- Inside diff view: <Tab>/<S-Tab> to cycle hunks, <CR> to accept, <BS> reject
 --
--- Startup: if gglib is installed but proxy not running, a WARN notification appears.
+-- Startup: if gglib is installed but neither endpoint answers, a WARN notification appears.
 -- ============================================================
 do
   -- render-markdown: pretty markdown in avante sidebar (and .md files)
@@ -578,40 +583,74 @@ do
   -- avante.nvim — requires build step (Rust); runs automatically on install/update
   vim.pack.add { gh 'yetone/avante.nvim' }
 
-  -- Fetch available models from gglib proxy at startup
-  local function gglib_fetch_models()
-    local handle = io.popen 'curl -sf --max-time 1 http://127.0.0.1:8080/v1/models 2>/dev/null'
-    if not handle then return {} end
-    local stdout = handle:read '*a'
-    handle:close()
-    local ok, data = pcall(vim.json.decode, stdout or '')
-    if ok and data and data.data and #data.data > 0 then
-      return vim.tbl_map(function(m) return m.id end, data.data)
+  local GGLIB_LOCAL_URL  = 'http://127.0.0.1:8080/v1'
+  local GGLIB_REMOTE_URL = vim.env.GGLIB_REMOTE_URL or 'http://127.0.0.1:8180/v1'
+
+  -- Fetch chat-capable models from a gglib /v1/models endpoint.
+  -- The bearer key goes to curl on stdin (-H @-) so it never appears in argv.
+  local function gglib_fetch_models(base_url, key)
+    local cmd = { 'curl', '-sf', '--max-time', '1', base_url .. '/models' }
+    if key then vim.list_extend(cmd, { '-H', '@-' }) end
+    local ok, res = pcall(function()
+      return vim.system(cmd, { text = true, stdin = key and ('Authorization: Bearer ' .. key) or nil }):wait()
+    end)
+    if not ok or res.code ~= 0 then return {} end
+    local decoded, data = pcall(vim.json.decode, res.stdout or '')
+    if not decoded or type(data) ~= 'table' or type(data.data) ~= 'table' then return {} end
+
+    local reasoning, other = {}, {}
+    for _, m in ipairs(data.data) do
+      local caps = type(m.capabilities) == 'table' and m.capabilities or {}
+      local is_chat = not vim.tbl_contains(caps, 'image_generation') and not m.id:lower():find 'encoder'
+      if is_chat then table.insert(vim.tbl_contains(caps, 'reasoning') and reasoning or other, m.id) end
     end
-    return {}
+    return vim.list_extend(reasoning, other)
   end
 
-  local gglib_model_list    = gglib_fetch_models()
-  local gglib_default_model = gglib_model_list[1] or 'gglib-default'
+  -- This device's key for the machine it joined; nil when not paired.
+  -- stderr carries a "this is a secret" warning, captured here and discarded.
+  local function gglib_remote_key()
+    if vim.fn.executable 'gglib' == 0 then return nil end
+    local res = vim.system({ 'gglib', 'remote', 'key', '--show' }, { text = true }):wait()
+    local key = res.code == 0 and vim.trim(res.stdout or '') or ''
+    return key ~= '' and key or nil
+  end
+
+  local gglib_local_models  = gglib_fetch_models(GGLIB_LOCAL_URL)
+  local gglib_key           = gglib_remote_key()
+  local gglib_remote_models = gglib_key and gglib_fetch_models(GGLIB_REMOTE_URL, gglib_key) or {}
+
+  local function gglib_provider(endpoint, api_key_name, models)
+    return {
+      __inherited_from   = 'openai',
+      api_key_name       = api_key_name,
+      endpoint           = endpoint,
+      model              = models[1] or 'gglib-default',
+      model_names        = vim.list_slice(models), -- copy: avante appends to it in place
+      timeout            = 60000,
+      extra_request_body = {
+        temperature = 0,
+        max_tokens  = 8192,
+      },
+    }
+  end
+
+  -- model and model_names are populated dynamically from /v1/models at startup
+  local gglib_providers = {
+    -- gglib proxy: OpenAI-compatible, no auth, local only
+    gglib = gglib_provider(GGLIB_LOCAL_URL, 'cmd:echo sk-dummy', gglib_local_models),
+  }
+  if gglib_key then
+    -- avante runs this once per session and reads stdout only
+    gglib_providers.gglib_remote = gglib_provider(GGLIB_REMOTE_URL, 'cmd:gglib remote key --show', gglib_remote_models)
+  end
+
+  local gglib_default_provider = 'gglib'
+  if #gglib_local_models == 0 and #gglib_remote_models > 0 then gglib_default_provider = 'gglib_remote' end
 
   require('avante').setup {
-    provider = 'gglib',
-    providers = {
-      -- gglib proxy: OpenAI-compatible, no auth, local only
-      -- model and model_names are populated dynamically from /v1/models at startup
-      gglib = {
-        __inherited_from   = 'openai',
-        api_key_name       = 'cmd:echo sk-dummy',
-        endpoint           = 'http://127.0.0.1:8080/v1',
-        model              = gglib_default_model,
-        model_names        = gglib_model_list,
-        timeout            = 60000,
-        extra_request_body = {
-          temperature = 0,
-          max_tokens  = 8192,
-        },
-      },
-    },
+    provider  = gglib_default_provider,
+    providers = gglib_providers,
     behaviour = {
       auto_suggestions              = false, -- inline completions off (use blink.cmp)
       auto_approve_tool_permissions = true,  -- default: approve all (overridden in plan mode)
@@ -620,8 +659,21 @@ do
       position = 'right',
       width    = 38,
       wrap     = true,
+      -- show provider/model in the sidebar header; also stops avante announcing
+      -- the restored model at startup (which triggered a hit-enter prompt)
+      sidebar_header = { include_model = true },
     },
   }
+
+  -- avante restores the last picked provider (~/.config/avante.nvim/config.json)
+  -- over `provider` above; respect it unless that endpoint is down and another is up.
+  local gglib_live = { gglib = gglib_local_models, gglib_remote = gglib_remote_models }
+  local restored   = require('avante.config').provider
+  if gglib_live[restored] and #gglib_live[restored] == 0 and #gglib_live[gglib_default_provider] > 0 then
+    -- what avante.api.switch_provider does, minus its startup notice
+    require('avante.config').override { provider = gglib_default_provider }
+    require('avante.providers')[gglib_default_provider].setup()
+  end
 
   -- ── Plan / Execute mode toggle ───────────────────────────────────────────
   -- All write, edit, create, delete, and exec tools are stripped from the
@@ -676,27 +728,15 @@ do
     require('avante.api').ask()
   end, { desc = '[A]vante [E]xecute mode (all tools)' })
 
-  -- Warn at startup if gglib is installed but the proxy is not running
+  -- Warn at startup if gglib is installed but neither endpoint answered the probe above
   vim.api.nvim_create_autocmd('VimEnter', {
     once = true,
     callback = function()
+      if vim.fn.executable 'gglib' == 0 then return end
+      if #gglib_local_models > 0 or #gglib_remote_models > 0 then return end
+      local hint = gglib_key and 'gglib proxy, or gglib remote join --port 8180' or 'gglib proxy'
       vim.defer_fn(function()
-        if vim.fn.executable 'gglib' == 0 then return end
-        vim.system(
-          { 'curl', '-sf', '--max-time', '1', 'http://127.0.0.1:8080/health' },
-          {},
-          function(result)
-            if result.code ~= 0 then
-              vim.schedule(function()
-                vim.notify(
-                  '[gglib] proxy not running — start with: gglib proxy',
-                  vim.log.levels.WARN,
-                  { title = 'gglib' }
-                )
-              end)
-            end
-          end
-        )
+        vim.notify('[gglib] no proxy answering — start with: ' .. hint, vim.log.levels.WARN, { title = 'gglib' })
       end, 500)
     end,
   })
