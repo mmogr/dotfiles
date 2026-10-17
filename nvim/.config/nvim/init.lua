@@ -659,6 +659,9 @@ do
       position = 'right',
       width    = 38,
       wrap     = true,
+      -- show provider/model in the sidebar header; also stops avante announcing
+      -- the restored model at startup (which triggered a hit-enter prompt)
+      sidebar_header = { include_model = true },
     },
   }
 
@@ -667,7 +670,9 @@ do
   local gglib_live = { gglib = gglib_local_models, gglib_remote = gglib_remote_models }
   local restored   = require('avante.config').provider
   if gglib_live[restored] and #gglib_live[restored] == 0 and #gglib_live[gglib_default_provider] > 0 then
-    require('avante.api').switch_provider(gglib_default_provider)
+    -- what avante.api.switch_provider does, minus its startup notice
+    require('avante.config').override { provider = gglib_default_provider }
+    require('avante.providers')[gglib_default_provider].setup()
   end
 
   -- ── Plan / Execute mode toggle ───────────────────────────────────────────
