@@ -552,7 +552,8 @@ end
 --
 -- Endpoint: gglib proxy at 127.0.0.1:8080 (must be running: gglib proxy)
 -- Model: auto-detected from gglib proxy at startup; use <leader>a? to switch.
---        Falls back to 'gglib-default' if proxy is not running.
+--        Image-generation models and text encoders are filtered out; reasoning
+--        models are preferred. Falls back to 'gglib-default' if proxy is not running.
 --
 -- PLAN / EXECUTE mode toggle (hot-swaps avante.config at runtime):
 --   <leader>ap   PLAN MODE  — strips write/exec tools; model can only read,
@@ -578,17 +579,22 @@ do
   -- avante.nvim — requires build step (Rust); runs automatically on install/update
   vim.pack.add { gh 'yetone/avante.nvim' }
 
-  -- Fetch available models from gglib proxy at startup
+  -- Fetch chat-capable models from gglib proxy at startup
   local function gglib_fetch_models()
-    local handle = io.popen 'curl -sf --max-time 1 http://127.0.0.1:8080/v1/models 2>/dev/null'
-    if not handle then return {} end
-    local stdout = handle:read '*a'
-    handle:close()
-    local ok, data = pcall(vim.json.decode, stdout or '')
-    if ok and data and data.data and #data.data > 0 then
-      return vim.tbl_map(function(m) return m.id end, data.data)
+    local ok, res = pcall(function()
+      return vim.system({ 'curl', '-sf', '--max-time', '1', 'http://127.0.0.1:8080/v1/models' }, { text = true }):wait()
+    end)
+    if not ok or res.code ~= 0 then return {} end
+    local decoded, data = pcall(vim.json.decode, res.stdout or '')
+    if not decoded or type(data) ~= 'table' or type(data.data) ~= 'table' then return {} end
+
+    local reasoning, other = {}, {}
+    for _, m in ipairs(data.data) do
+      local caps = type(m.capabilities) == 'table' and m.capabilities or {}
+      local is_chat = not vim.tbl_contains(caps, 'image_generation') and not m.id:lower():find 'encoder'
+      if is_chat then table.insert(vim.tbl_contains(caps, 'reasoning') and reasoning or other, m.id) end
     end
-    return {}
+    return vim.list_extend(reasoning, other)
   end
 
   local gglib_model_list    = gglib_fetch_models()
