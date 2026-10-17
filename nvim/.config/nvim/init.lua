@@ -626,7 +626,7 @@ do
       api_key_name       = api_key_name,
       endpoint           = endpoint,
       model              = models[1] or 'gglib-default',
-      model_names        = models,
+      model_names        = vim.list_slice(models), -- copy: avante appends to it in place
       timeout            = 60000,
       extra_request_body = {
         temperature = 0,
@@ -661,6 +661,14 @@ do
       wrap     = true,
     },
   }
+
+  -- avante restores the last picked provider (~/.config/avante.nvim/config.json)
+  -- over `provider` above; respect it unless that endpoint is down and another is up.
+  local gglib_live = { gglib = gglib_local_models, gglib_remote = gglib_remote_models }
+  local restored   = require('avante.config').provider
+  if gglib_live[restored] and #gglib_live[restored] == 0 and #gglib_live[gglib_default_provider] > 0 then
+    require('avante.api').switch_provider(gglib_default_provider)
+  end
 
   -- ── Plan / Execute mode toggle ───────────────────────────────────────────
   -- All write, edit, create, delete, and exec tools are stripped from the
