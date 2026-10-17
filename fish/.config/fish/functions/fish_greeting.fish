@@ -1,4 +1,4 @@
-# Greeting — fastfetch sized to the window. The info column is ~35 chars and
+# Greeting — fastfetch sized to the window. The info column is ~48 chars and
 # ~22 rows; fastfetch truncates rather than wraps, so pick the biggest logo
 # that still fits beside it and skip the greeting entirely in windows too
 # small to hold it.
@@ -14,11 +14,11 @@ function fish_greeting
 
     set -lx GREETING_AUR (__greeting_aur)
 
-    if test $cols -lt 40 -o $rows -lt 24
+    if test $cols -lt 50 -o $rows -lt 25
         return
-    else if test $cols -ge 100
+    else if test $cols -ge 108
         fastfetch
-    else if test $cols -ge 72
+    else if test $cols -ge 78
         fastfetch --logo CachyOS_small
     else
         fastfetch --logo none
