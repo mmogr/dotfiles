@@ -1,0 +1,44 @@
+// Greeting splash shown by fish_greeting (fish/.config/fish/functions/).
+// fish picks the logo size from the window width, and fastfetch truncates
+// anything that does not fit beside it, so keep the info column narrow.
+//
+// The AUR, battery and session rows print GREETING_* variables that
+// fish_greeting exports; run `fastfetch` by hand and they are left out.
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
+  "display": {
+    "color": { "keys": "cyan", "title": "green" },
+    "separator": "",
+    "key": { "type": "both-2", "width": 14 },
+    "size": { "ndigits": 1 },
+    "percent": { "type": ["num", "num-color", "bar"] },
+    "bar": {
+      "width": 8,
+      "char": { "elapsed": "■", "total": "·" },
+      "border": { "left": "", "right": " " }
+    }
+  },
+  "modules": [
+    "title",
+    { "type": "custom", "format": "{#green}─────────────────────────────────────────────" },
+    { "type": "os", "format": "{name} {arch}" },
+    { "type": "host", "format": "{family}" },
+    { "type": "kernel", "format": "{release}" },
+    "uptime",
+    "packages",
+    { "type": "command", "key": "AUR", "keyIcon": "󰣇", "text": "printf %s \"$GREETING_AUR\"" },
+    { "type": "shell", "format": "{pretty-name} {version}" },
+    { "type": "custom", "format": "{#green}── hardware ─────────────────────────────────" },
+    { "type": "display", "key": "Display", "format": "{width}x{height} @ {refresh-rate} Hz" },
+    { "type": "cpu", "format": "{name}" },
+    { "type": "gpu", "format": "{name}" },
+    { "type": "memory", "format": "{percentage-bar}{percentage}  {used} / {total}" },
+    { "type": "disk", "folders": "/", "key": "Disk", "format": "{size-percentage-bar}{size-percentage}  {size-used} / {size-total}" },
+    { "type": "command", "key": "Battery", "keyIcon": "󰁹", "text": "printf %s \"$GREETING_BATTERY\"" },
+    { "type": "custom", "format": "{#green}── session ──────────────────────────────────" },
+    { "type": "command", "key": "Last", "keyIcon": "󰋚", "text": "printf %s \"$GREETING_LAST\"" },
+    { "type": "command", "key": "Today", "keyIcon": "󰃭", "text": "printf %s \"$GREETING_TODAY\"" },
+    "break",
+    "colors"
+  ]
+}

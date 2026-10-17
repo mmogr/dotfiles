@@ -11,7 +11,7 @@
 # Adding a tool that needs installing: also add modules/<tool>/mod.just + a `mod` line.
 
 # Stow packages, in stow order. Single source of truth for stow-all and check.
-packages := "shell bash zsh fish git direnv mise nvim dev-db open-webui jupyter"
+packages := "shell bash zsh fish fastfetch git direnv mise nvim dev-db open-webui jupyter"
 
 mod conda      'modules/conda/mod.just'
 mod fish       'modules/fish/mod.just'

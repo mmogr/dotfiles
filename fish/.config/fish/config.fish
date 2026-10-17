@@ -26,11 +26,9 @@ else if test -x $HOME/.local/bin/mise; and set -l direnv_bin ($HOME/.local/bin/m
     $direnv_bin hook fish | source
 end
 
-# overwrite greeting
-# potentially disabling fastfetch
-#function fish_greeting
-#    # smth smth
-#end
+# Greeting — functions/fish_greeting.fish. CachyOS's config above defines its
+# own fish_greeting, which stops fish autoloading ours, so source it over that.
+source $__fish_config_dir/functions/fish_greeting.fish
 
 source ~/.config/shell/aliases.sh
 
