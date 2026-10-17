@@ -582,6 +582,14 @@ do
 
   -- avante.nvim — requires build step (Rust); runs automatically on install/update
   vim.pack.add { gh 'yetone/avante.nvim' }
+  -- avante's run_python tool shells out to `docker run`. With no Docker daemon,
+  -- point the docker CLI at the rootless podman socket (just podman::enable-socket).
+  do
+    local podman_sock = (vim.env.XDG_RUNTIME_DIR or '') .. '/podman/podman.sock'
+    if not vim.env.DOCKER_HOST and not vim.uv.fs_stat '/var/run/docker.sock' and vim.uv.fs_stat(podman_sock) then
+      vim.env.DOCKER_HOST = 'unix://' .. podman_sock
+    end
+  end
 
   local GGLIB_LOCAL_URL  = 'http://127.0.0.1:8080/v1'
   local GGLIB_REMOTE_URL = vim.env.GGLIB_REMOTE_URL or 'http://127.0.0.1:8180/v1'
