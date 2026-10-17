@@ -1,7 +1,7 @@
-# Greeting — fastfetch sized to the window. The info column is ~48 chars and
+# Greeting — fastfetch splash sized to the window, or a one-line banner when
+# the window is too small for it. The splash's info column is ~48 chars and
 # 22 rows; fastfetch truncates rather than wraps, so pick the biggest logo
-# that still fits beside it and skip the greeting entirely in windows too
-# small to hold it.
+# that still fits beside it.
 #
 # The AUR, battery and session rows in fastfetch/.config/fastfetch/config.jsonc
 # print the GREETING_* variables exported here. Everything is read from files
@@ -20,7 +20,7 @@ function fish_greeting
     set -lx GREETING_TODAY $session[2]
 
     if test $cols -lt 50 -o $rows -lt 25
-        return
+        __greeting_banner $cols
     else if test $cols -ge 108
         fastfetch
     else if test $cols -ge 78
