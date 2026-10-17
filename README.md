@@ -28,6 +28,7 @@ Adding a tool that needs installing: also add `modules/<tool>/mod.just` and a `m
 | `bash` | `~/.bashrc`, `~/.bash_profile` |
 | `zsh` | `~/.zshrc` |
 | `fish` | `~/.config/fish/config.fish` |
+| `fastfetch` | `~/.config/fastfetch/config.jsonc` (the fish greeting) |
 | `git` | `~/.gitconfig` (identity lives in untracked `~/.gitconfig-local`) |
 | `direnv` | `~/.config/direnv/direnvrc` |
 | `mise` | `~/.config/mise/config.toml` |
