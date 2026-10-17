@@ -1,6 +1,9 @@
-// Greeting shown by fish_greeting (see fish/.config/fish/config.fish).
+// Greeting shown by fish_greeting (fish/.config/fish/functions/).
 // Keep the info lines short: fish picks the logo size from the terminal
 // width, and fastfetch truncates anything that does not fit beside it.
+//
+// The AUR row prints GREETING_AUR, which fish_greeting exports; run
+// `fastfetch` by hand and it is left out.
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
   "modules": [
@@ -14,7 +17,7 @@
     {
       "type": "command",
       "key": "AUR",
-      "text": "command -v paru >/dev/null && paru -Qm | wc -l"
+      "text": "printf %s \"$GREETING_AUR\""
     },
     { "type": "shell", "format": "{pretty-name} {version}" },
     { "type": "display", "key": "Display", "format": "{width}x{height} @ {refresh-rate} Hz" },

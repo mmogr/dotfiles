@@ -26,27 +26,9 @@ else if test -x $HOME/.local/bin/mise; and set -l direnv_bin ($HOME/.local/bin/m
     $direnv_bin hook fish | source
 end
 
-# Greeting — fastfetch sized to the window (overrides CachyOS's plain
-# `fastfetch`). The info column is ~35 chars and ~22 rows; fastfetch truncates
-# rather than wraps, so pick the biggest logo that still fits beside it and
-# skip the greeting entirely in windows too small to hold it.
-function fish_greeting
-    command -q fastfetch; or return
-    set -l cols $COLUMNS
-    set -l rows $LINES
-    test -n "$cols"; or set cols (tput cols)
-    test -n "$rows"; or set rows (tput lines)
-
-    if test $cols -lt 40 -o $rows -lt 24
-        return
-    else if test $cols -ge 100
-        fastfetch
-    else if test $cols -ge 72
-        fastfetch --logo CachyOS_small
-    else
-        fastfetch --logo none
-    end
-end
+# Greeting — functions/fish_greeting.fish. CachyOS's config above defines its
+# own fish_greeting, which stops fish autoloading ours, so source it over that.
+source $__fish_config_dir/functions/fish_greeting.fish
 
 source ~/.config/shell/aliases.sh
 
