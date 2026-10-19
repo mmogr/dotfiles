@@ -658,7 +658,9 @@ do
 
   require('avante').setup {
     provider  = gglib_default_provider,
-    providers = gglib_providers,
+    -- avante offers its built-in copilot provider in the model picker whenever a
+    -- GitHub Copilot login exists (~/.config/github-copilot); Copilot isn't used
+    providers = vim.tbl_extend('error', gglib_providers, { copilot = { hide_in_model_selector = true } }),
     behaviour = {
       auto_suggestions              = false, -- inline completions off (use blink.cmp)
       auto_approve_tool_permissions = true,  -- default: approve all (overridden in plan mode)
