@@ -11,7 +11,7 @@
 [tools]
 node = "24"
 rust = "stable"
-"aqua:cli/cli" = "2.102.0"                 # gh
-"aqua:jesseduffield/lazygit" = "0.66.1"
+"aqua:cli/cli" = "2.103.0"                 # gh
+"aqua:jesseduffield/lazygit" = "0.66.2"
 "aqua:direnv/direnv" = "2.38.2"
 "aqua:neovim/neovim" = "0.12.6"
