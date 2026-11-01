@@ -553,7 +553,8 @@ end
 -- Endpoints (probed at startup, first one that answers becomes the default):
 --   gglib         local proxy at 127.0.0.1:8080 (gglib proxy), no auth
 --   gglib_remote  a paired machine's proxy via `gglib remote join --port 8180`;
---                 authenticated with `gglib remote key --show` (never stored here).
+--                 authenticated with `gglib config settings reveal remote-pairing.api-key`
+--                 (never stored here).
 --                 Override the URL with $GGLIB_REMOTE_URL if joined on another port.
 -- Model: auto-detected from /v1/models at startup; use <leader>a? to switch.
 --        Image-generation models and text encoders are filtered out; reasoning
@@ -616,10 +617,11 @@ do
   end
 
   -- This device's key for the machine it joined; nil when not paired.
-  -- stderr carries a "this is a secret" warning, captured here and discarded.
+  -- (gglib 0.29 dropped `gglib remote key --show` in favour of `settings reveal`.)
+  local GGLIB_REMOTE_KEY_CMD = { 'gglib', 'config', 'settings', 'reveal', 'remote-pairing.api-key' }
   local function gglib_remote_key()
     if vim.fn.executable 'gglib' == 0 then return nil end
-    local res = vim.system({ 'gglib', 'remote', 'key', '--show' }, { text = true }):wait()
+    local res = vim.system(GGLIB_REMOTE_KEY_CMD, { text = true }):wait()
     local key = res.code == 0 and vim.trim(res.stdout or '') or ''
     return key ~= '' and key or nil
   end
@@ -650,7 +652,7 @@ do
   }
   if gglib_key then
     -- avante runs this once per session and reads stdout only
-    gglib_providers.gglib_remote = gglib_provider(GGLIB_REMOTE_URL, 'cmd:gglib remote key --show', gglib_remote_models)
+    gglib_providers.gglib_remote = gglib_provider(GGLIB_REMOTE_URL, 'cmd:' .. table.concat(GGLIB_REMOTE_KEY_CMD, ' '), gglib_remote_models)
   end
 
   local gglib_default_provider = 'gglib'
