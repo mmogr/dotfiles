@@ -12,6 +12,11 @@ install:
         curl -fsSL https://mise.run | sh
     fi
     echo "mise $("$MISE" --version)"
+    . "{{justfile_directory()}}/lib/detect.sh"
+    # Official Node >=26 Linux binaries link libatomic.so.1, which bare Debian/Ubuntu doesn't ship.
+    if [ "$OS" = debian ]; then
+        $PM libatomic1
+    fi
     # Explicit binary path: on a fresh machine the new shell config (which puts
     # ~/.local/bin on PATH and activates mise) has not been loaded yet.
     "$MISE" install --yes
