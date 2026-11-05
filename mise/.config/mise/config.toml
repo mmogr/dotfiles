@@ -9,7 +9,7 @@
 # ever lags behind what init.lua needs, switch it to "nightly".
 
 [tools]
-node = "24"
+node = "26"
 rust = "stable"
 "aqua:cli/cli" = "2.103.3"                 # gh
 "aqua:jesseduffield/lazygit" = "0.66.2"
