@@ -5,11 +5,17 @@
 #   e.g. podman-stack dev-db up -d postgres
 #
 # Before delegating to podman compose it:
-#   - starts the rootless podman socket on Linux (on macOS the podman machine
-#     owns the socket — see `just podman::machine-init`)
+#   - brings up whatever podman runs on: the rootless socket on Linux, the
+#     podman machine (a VM) on macOS — see "Backend lifecycle" below
 #   - creates the stack's bind-mount source directories; host data lives under
 #     ~/.local/share and is never tracked
 #   - adds the AMD GPU overlay for open-webui when /dev/dri and /dev/kfd exist
+#
+# After a teardown (down, stop) on macOS it stops the podman machine again once
+# no container is left running. PODMAN_STACK_KEEP_MACHINE=1 skips that.
+#
+# The compose verb (up, down, build, ...) must be the first compose argument:
+# it decides what happens to the backend.
 #
 # The short commands next to this script (pgup, nbup, uiup, ...) are wrappers.
 set -e
@@ -20,6 +26,7 @@ if [ -z "$STACK" ]; then
     exit 1
 fi
 shift
+VERB="${1:-}"
 
 CONF="${XDG_CONFIG_HOME:-$HOME/.config}"
 # The compose files hardcode this path too: podman-compose cannot expand a
@@ -56,13 +63,95 @@ case "$STACK" in
         ;;
 esac
 
-# The rootless socket is what a docker-compose provider talks to. If user
-# systemd is not available (containers, CI) carry on: podman-compose does not
-# need the socket, and anything that does will fail with its own message.
-if [ "$(uname -s)" = "Linux" ]; then
-    if ! systemctl --user start podman.socket 2>/dev/null; then
-        echo "podman-stack: could not start podman.socket (no user systemd?) — continuing" >&2
-    fi
+# ── Backend lifecycle ─────────────────────────────────────────────────────────
+# What the compose verb needs from the backend:
+#   teardown  down, stop           never start a backend just to stop things,
+#                                  and give it back afterwards
+#   inspect   config, ps, logs...  read-only: take the backend as it is
+#   none      no verb, or a flag   pass straight through (e.g. --help)
+#   run       everything else      start the backend if it is down
+#
+# Everything this script prints itself goes to stderr; stdout belongs to compose.
+case "$VERB" in
+    down | stop)
+        NEED=teardown
+        ;;
+    config | ps | logs | exec | images | top | port | events | version)
+        NEED=inspect
+        ;;
+    '' | -* | help)
+        NEED=none
+        ;;
+    *)
+        NEED=run
+        ;;
+esac
+OS=$(uname -s)
+
+# Reads local machine config, so it costs no round trip to the VM.
+machine_running() {
+    [ "$(podman machine inspect --format '{{.State}}' 2>/dev/null)" = "running" ]
+}
+
+case "$OS" in
+    Linux)
+        # The rootless socket is what a docker-compose provider talks to. It is
+        # socket-activated and costs nothing idle, so start it for every verb
+        # and never stop it. If user systemd is not available (containers, CI)
+        # carry on: podman-compose does not need the socket, and anything that
+        # does will fail with its own message.
+        if ! systemctl --user start podman.socket 2>/dev/null; then
+            echo "podman-stack: could not start podman.socket (no user systemd?) — continuing" >&2
+        fi
+        ;;
+    Darwin)
+        # Containers run inside the podman machine, which nothing else starts
+        # after a reboot and which holds its CPU and memory until stopped.
+        if [ "$NEED" != none ] && ! machine_running; then
+            case "$NEED" in
+                teardown)
+                    echo "podman-stack: the podman machine is not running — nothing to stop" >&2
+                    exit 0
+                    ;;
+                inspect)
+                    # Not worth booting a VM for, but say why compose is about
+                    # to fail to connect.
+                    echo "podman-stack: the podman machine is not running and '$VERB' does not start it (run: podman machine start)" >&2
+                    ;;
+                run)
+                    echo "podman-stack: the podman machine is not running — starting it..." >&2
+                    if ! podman machine start >&2; then
+                        echo "podman-stack: could not start the podman machine. If none exists yet, run: just podman::machine-init" >&2
+                        exit 1
+                    fi
+                    ;;
+            esac
+        fi
+        ;;
+esac
+
+if [ "$OS" != Darwin ] || [ "$NEED" != teardown ]; then
+    exec podman compose "$@"
 fi
 
-exec podman compose "$@"
+# macOS teardown: run compose, then stop the machine if that was the last
+# running container. Anything else still running (another stack, a manual
+# `podman run`) keeps it up. Best effort — the stack is already down, so this
+# never changes the exit status. PODMAN_STACK_KEEP_MACHINE=1 skips it: image
+# builds do not show up in `podman ps`, so a teardown during `podman-stack
+# jupyter build` would otherwise stop the machine underneath the build.
+status=0
+podman compose "$@" || status=$?
+if [ -n "${PODMAN_STACK_KEEP_MACHINE:-}" ]; then
+    :
+elif ! running=$(podman ps -q 2>/dev/null); then
+    : # cannot tell what is running, so leave the machine alone
+elif [ -n "$running" ]; then
+    echo "podman-stack: other containers are still running — leaving the podman machine up" >&2
+else
+    echo "podman-stack: no containers left running — stopping the podman machine..." >&2
+    if ! podman machine stop > /dev/null 2>&1; then
+        echo "podman-stack: could not stop the podman machine (try: podman machine stop)" >&2
+    fi
+fi
+exit "$status"

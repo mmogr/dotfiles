@@ -115,8 +115,13 @@ JupyterLab (Python, Rust, Java, SQL, SoS; Quarto + TinyTeX): `nbup` / `nbdown` /
 `just jupyter::build` after changing the Containerfile or `environment.yml`
 
 All of these wrap `podman-stack <dev-db|jupyter|open-webui> <compose args>`, which starts the
-podman socket on Linux, creates the data directories, and adds the AMD GPU overlay for Open WebUI
-when `/dev/dri` and `/dev/kfd` exist.
+podman socket on Linux or the podman machine on macOS, creates the data directories, and adds the
+AMD GPU overlay for Open WebUI when `/dev/dri` and `/dev/kfd` exist.
+
+On macOS the `*down` commands also stop the podman machine once no container is left running, and
+do nothing if it is already stopped. `PODMAN_STACK_KEEP_MACHINE=1` keeps it up — use it for a
+`*down` while `just jupyter::build` is running, because a build does not count as a running
+container.
 
 Every service binds to `127.0.0.1` only. Jupyter runs without a token, Open WebUI without auth,
 and the databases with default passwords, so nothing is reachable from the network.
