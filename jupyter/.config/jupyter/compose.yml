@@ -9,6 +9,11 @@ services:
     ports:
       # Loopback only — token/password auth is disabled below.
       - "127.0.0.1:8890:8888"
+    labels:
+      # Printed by podman-stack after nbup (keep in sync with ports above).
+      dotfiles.access: |
+        JupyterLab → http://localhost:8890  (no token)
+          logs: nblog   stop: nbdown
     extra_hosts:
       - "host.containers.internal:host-gateway"
     environment:

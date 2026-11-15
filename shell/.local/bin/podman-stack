@@ -14,6 +14,10 @@
 # After a teardown (down, stop) on macOS it stops the podman machine again once
 # no container is left running. PODMAN_STACK_KEEP_MACHINE=1 skips that.
 #
+# After a successful up/start/restart it prints how to reach each running
+# service: the `dotfiles.access` label on that service in its compose file.
+# Add the label to a new service and it gets the same hint, no code here.
+#
 # The compose verb (up, down, build, ...) must be the first compose argument:
 # it decides what happens to the backend.
 #
@@ -127,6 +131,28 @@ case "$OS" in
                     ;;
             esac
         fi
+        ;;
+esac
+
+# ── Access hints ──────────────────────────────────────────────────────────────
+# Print the dotfiles.access label of every running container in this stack.
+# Compose names the project after the compose file's directory, which is the
+# stack name.
+print_access() {
+    ids=$(podman ps -q --filter "label=com.docker.compose.project=$STACK" \
+        --filter label=dotfiles.access 2>/dev/null) || return 0
+    [ -n "$ids" ] || return 0
+    echo
+    # shellcheck disable=SC2086  # $ids is a whitespace-separated id list
+    podman inspect --format '{{index .Config.Labels "dotfiles.access"}}' $ids |
+        grep -v '^$' || true
+}
+
+case "$VERB" in
+    up | start | restart)
+        podman compose "$@"
+        print_access >&2
+        exit 0
         ;;
 esac
 

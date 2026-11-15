@@ -9,6 +9,11 @@ services:
     container_name: dev-postgres
     ports:
       - "127.0.0.1:5432:5432"
+    labels:
+      # Printed by podman-stack after pgup (keep in sync with ports above).
+      dotfiles.access: |
+        Postgres → postgresql://postgres:postgres@localhost:5432/postgres  (default password)
+          psql: podman exec -it dev-postgres psql -U postgres   stop: dbdown
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
     volumes:
@@ -21,6 +26,11 @@ services:
     container_name: dev-mysql
     ports:
       - "127.0.0.1:3306:3306"
+    labels:
+      # Printed by podman-stack after myup (keep in sync with ports above).
+      dotfiles.access: |
+        MySQL → mysql://root:root@127.0.0.1:3306/  (default password)
+          client: podman exec -it dev-mysql mysql -uroot -p   stop: dbdown
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
     volumes:
