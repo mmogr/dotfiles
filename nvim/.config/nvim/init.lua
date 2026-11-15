@@ -551,11 +551,12 @@ end
 -- inline diffs, you accept/reject hunks — all inside nvim.
 --
 -- Endpoints (probed at startup, first one that answers becomes the default):
---   gglib         local proxy at 127.0.0.1:8080 (gglib proxy), no auth
+--   gglib         local proxy at 127.0.0.1:8080 (gglib proxy); authenticated with
+--                 `gglib config reveal proxy-api-key`
 --   gglib_remote  a paired machine's proxy via `gglib remote join --port 8180`;
---                 authenticated with `gglib config settings reveal remote-pairing.api-key`
---                 (never stored here).
+--                 authenticated with `gglib config reveal remote-pairing.api-key`.
 --                 Override the URL with $GGLIB_REMOTE_URL if joined on another port.
+--   Neither key is stored here: gglib holds them and prints them on request.
 -- Model: auto-detected from /v1/models at startup; use <leader>a? to switch.
 --        Image-generation models and text encoders are filtered out; reasoning
 --        models are preferred. Falls back to 'gglib-default' if nothing answers.
@@ -616,19 +617,24 @@ do
     return vim.list_extend(reasoning, other)
   end
 
-  -- This device's key for the machine it joined; nil when not paired.
-  -- (gglib 0.29 dropped `gglib remote key --show` in favour of `settings reveal`.)
-  local GGLIB_REMOTE_KEY_CMD = { 'gglib', 'config', 'settings', 'reveal', 'remote-pairing.api-key' }
-  local function gglib_remote_key()
+  -- gglib prints a stored secret alone on stdout. The command has moved twice:
+  -- `remote key --show`, then `config settings reveal` (0.29), now `config reveal` (0.37).
+  local function gglib_key_cmd(name) return { 'gglib', 'config', 'reveal', name } end
+  local GGLIB_LOCAL_KEY_CMD  = gglib_key_cmd 'proxy-api-key'          -- this machine's proxy
+  local GGLIB_REMOTE_KEY_CMD = gglib_key_cmd 'remote-pairing.api-key' -- this device's key for the machine it joined
+
+  -- The secret `cmd` prints; nil when gglib is missing, the command fails, or nothing is stored.
+  local function gglib_reveal(cmd)
     if vim.fn.executable 'gglib' == 0 then return nil end
-    local res = vim.system(GGLIB_REMOTE_KEY_CMD, { text = true }):wait()
+    local res = vim.system(cmd, { text = true }):wait()
     local key = res.code == 0 and vim.trim(res.stdout or '') or ''
     return key ~= '' and key or nil
   end
 
-  local gglib_local_models  = gglib_fetch_models(GGLIB_LOCAL_URL)
-  local gglib_key           = gglib_remote_key()
-  local gglib_remote_models = gglib_key and gglib_fetch_models(GGLIB_REMOTE_URL, gglib_key) or {}
+  local gglib_local_key     = gglib_reveal(GGLIB_LOCAL_KEY_CMD)
+  local gglib_remote_key    = gglib_reveal(GGLIB_REMOTE_KEY_CMD) -- nil when not paired
+  local gglib_local_models  = gglib_fetch_models(GGLIB_LOCAL_URL, gglib_local_key)
+  local gglib_remote_models = gglib_remote_key and gglib_fetch_models(GGLIB_REMOTE_URL, gglib_remote_key) or {}
 
   local function gglib_provider(endpoint, api_key_name, models)
     return {
@@ -645,14 +651,21 @@ do
     }
   end
 
+  -- avante runs a `cmd:` key command once per session and reads stdout only
+  local function gglib_api_key_name(cmd) return 'cmd:' .. table.concat(cmd, ' ') end
+
   -- model and model_names are populated dynamically from /v1/models at startup
   local gglib_providers = {
-    -- gglib proxy: OpenAI-compatible, no auth, local only
-    gglib = gglib_provider(GGLIB_LOCAL_URL, 'cmd:echo sk-dummy', gglib_local_models),
+    -- gglib proxy: OpenAI-compatible, local only. It wants its key since gglib 0.37;
+    -- with none stored (an older gglib) any placeholder is accepted.
+    gglib = gglib_provider(
+      GGLIB_LOCAL_URL,
+      gglib_local_key and gglib_api_key_name(GGLIB_LOCAL_KEY_CMD) or 'cmd:echo sk-dummy',
+      gglib_local_models
+    ),
   }
-  if gglib_key then
-    -- avante runs this once per session and reads stdout only
-    gglib_providers.gglib_remote = gglib_provider(GGLIB_REMOTE_URL, 'cmd:' .. table.concat(GGLIB_REMOTE_KEY_CMD, ' '), gglib_remote_models)
+  if gglib_remote_key then
+    gglib_providers.gglib_remote = gglib_provider(GGLIB_REMOTE_URL, gglib_api_key_name(GGLIB_REMOTE_KEY_CMD), gglib_remote_models)
   end
 
   local gglib_default_provider = 'gglib'
@@ -746,7 +759,7 @@ do
     callback = function()
       if vim.fn.executable 'gglib' == 0 then return end
       if #gglib_local_models > 0 or #gglib_remote_models > 0 then return end
-      local hint = gglib_key and 'gglib proxy, or gglib remote join --port 8180' or 'gglib proxy'
+      local hint = gglib_remote_key and 'gglib proxy, or gglib remote join --port 8180' or 'gglib proxy'
       vim.defer_fn(function()
         vim.notify('[gglib] no proxy answering — start with: ' .. hint, vim.log.levels.WARN, { title = 'gglib' })
       end, 500)
