@@ -12,7 +12,9 @@ services:
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
     volumes:
-      - ${HOME}/.local/share/dev-db/postgres:/var/lib/postgresql/data:U
+      # Postgres 18+ keeps data in a per-version subdir (/var/lib/postgresql/<major>/docker).
+      # A major bump needs pg_upgrade or a fresh dir; the container refuses old data.
+      - ${HOME}/.local/share/dev-db/postgres:/var/lib/postgresql:U
 
   mysql:
     image: docker.io/library/mysql:26.10
