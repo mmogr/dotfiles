@@ -575,7 +575,8 @@ end
 --   <leader>an   New ask (fresh chat)
 -- Inside diff view: <Tab>/<S-Tab> to cycle hunks, <CR> to accept, <BS> reject
 --
--- Startup: if gglib is installed but neither endpoint answers, a WARN notification appears.
+-- Startup: if gglib is installed but no endpoint offers a chat model, a WARN notification
+-- says why for each: not running, not joined, key rejected, or gglib's CLI has changed.
 -- ============================================================
 do
   -- render-markdown: pretty markdown in avante sidebar (and .md files)
@@ -597,16 +598,25 @@ do
   local GGLIB_REMOTE_URL = vim.env.GGLIB_REMOTE_URL or 'http://127.0.0.1:8180/v1'
 
   -- Fetch chat-capable models from a gglib /v1/models endpoint.
+  -- Returns the models and a status for the startup warning: 'ok', 'down' (nothing
+  -- listening), 'timeout', 'auth' (key rejected), or a description of anything else.
   -- The bearer key goes to curl on stdin (-H @-) so it never appears in argv.
   local function gglib_fetch_models(base_url, key)
-    local cmd = { 'curl', '-sf', '--max-time', '1', base_url .. '/models' }
+    -- No -f: the HTTP status is appended to the body, so a 401 can be told from a dead port.
+    local cmd = { 'curl', '-s', '--max-time', '1', '-w', '\n%{http_code}', base_url .. '/models' }
     if key then vim.list_extend(cmd, { '-H', '@-' }) end
     local ok, res = pcall(function()
       return vim.system(cmd, { text = true, stdin = key and ('Authorization: Bearer ' .. key) or nil }):wait()
     end)
-    if not ok or res.code ~= 0 then return {} end
-    local decoded, data = pcall(vim.json.decode, res.stdout or '')
-    if not decoded or type(data) ~= 'table' or type(data.data) ~= 'table' then return {} end
+    if not ok then return {}, 'curl could not be run' end
+    if res.code == 7 then return {}, 'down' end
+    if res.code == 28 then return {}, 'timeout' end
+    if res.code ~= 0 then return {}, 'curl exit ' .. res.code end
+    local body, http = (res.stdout or ''):match '^(.*)\n(%d+)%s*$'
+    if http == '401' or http == '403' then return {}, 'auth' end
+    if http ~= '200' then return {}, 'HTTP ' .. tostring(http) end
+    local decoded, data = pcall(vim.json.decode, body)
+    if not decoded or type(data) ~= 'table' or type(data.data) ~= 'table' then return {}, 'unreadable model list' end
 
     local reasoning, other = {}, {}
     for _, m in ipairs(data.data) do
@@ -614,7 +624,7 @@ do
       local is_chat = not vim.tbl_contains(caps, 'image_generation') and not m.id:lower():find 'encoder'
       if is_chat then table.insert(vim.tbl_contains(caps, 'reasoning') and reasoning or other, m.id) end
     end
-    return vim.list_extend(reasoning, other)
+    return vim.list_extend(reasoning, other), 'ok'
   end
 
   -- gglib prints a stored secret alone on stdout. The command has moved twice:
@@ -624,17 +634,25 @@ do
   local GGLIB_REMOTE_KEY_CMD = gglib_key_cmd 'remote-pairing.api-key' -- this device's key for the machine it joined
 
   -- The secret `cmd` prints; nil when gglib is missing, the command fails, or nothing is stored.
+  -- gglib exits 1 when nothing is stored and 2 when it does not know the command. The
+  -- second means its CLI has moved again, and comes back as a message for the startup warning.
   local function gglib_reveal(cmd)
     if vim.fn.executable 'gglib' == 0 then return nil end
     local res = vim.system(cmd, { text = true }):wait()
+    if res.code == 2 then
+      return nil, ("`%s` failed: gglib's CLI changed, update init.lua"):format(table.concat(cmd, ' '))
+    end
     local key = res.code == 0 and vim.trim(res.stdout or '') or ''
     return key ~= '' and key or nil
   end
 
-  local gglib_local_key     = gglib_reveal(GGLIB_LOCAL_KEY_CMD)
-  local gglib_remote_key    = gglib_reveal(GGLIB_REMOTE_KEY_CMD) -- nil when not paired
-  local gglib_local_models  = gglib_fetch_models(GGLIB_LOCAL_URL, gglib_local_key)
-  local gglib_remote_models = gglib_remote_key and gglib_fetch_models(GGLIB_REMOTE_URL, gglib_remote_key) or {}
+  local gglib_local_key, gglib_local_cli_err     = gglib_reveal(GGLIB_LOCAL_KEY_CMD)
+  local gglib_remote_key, gglib_remote_cli_err   = gglib_reveal(GGLIB_REMOTE_KEY_CMD) -- no key when not paired
+  local gglib_local_models, gglib_local_status   = gglib_fetch_models(GGLIB_LOCAL_URL, gglib_local_key)
+  local gglib_remote_models, gglib_remote_status = {}, nil -- not probed without a key
+  if gglib_remote_key then
+    gglib_remote_models, gglib_remote_status = gglib_fetch_models(GGLIB_REMOTE_URL, gglib_remote_key)
+  end
 
   local function gglib_provider(endpoint, api_key_name, models)
     return {
@@ -753,15 +771,36 @@ do
     require('avante.api').ask()
   end, { desc = '[A]vante [E]xecute mode (all tools)' })
 
-  -- Warn at startup if gglib is installed but neither endpoint answered the probe above
+  -- Warn at startup if gglib is installed but the probe above found no chat model,
+  -- saying what went wrong at each endpoint. A key command gglib no longer knows is
+  -- always reported, even when the other endpoint works: this file is out of date.
   vim.api.nvim_create_autocmd('VimEnter', {
     once = true,
     callback = function()
       if vim.fn.executable 'gglib' == 0 then return end
-      if #gglib_local_models > 0 or #gglib_remote_models > 0 then return end
-      local hint = gglib_remote_key and 'gglib proxy, or gglib remote join --port 8180' or 'gglib proxy'
+      local have_model = #gglib_local_models > 0 or #gglib_remote_models > 0
+      local says = { ok = 'has no chat models', timeout = 'did not answer within 1s' }
+      local endpoints = {
+        {
+          what = 'local proxy', status = gglib_local_status, cli_err = gglib_local_cli_err,
+          says = { down = 'is not running (gglib proxy)', auth = 'rejected its key' },
+        },
+        {
+          what = 'remote', status = gglib_remote_status, cli_err = gglib_remote_cli_err,
+          says = { down = 'is not joined (gglib remote join)', auth = "rejected this device's key (pair again)" },
+        },
+      }
+      local problems = {}
+      for _, e in ipairs(endpoints) do
+        if e.cli_err then
+          problems[#problems + 1] = e.cli_err
+        elseif not have_model and e.status then
+          problems[#problems + 1] = e.what .. ' ' .. (e.says[e.status] or says[e.status] or ('failed: ' .. e.status))
+        end
+      end
+      if #problems == 0 then return end
       vim.defer_fn(function()
-        vim.notify('[gglib] no proxy answering — start with: ' .. hint, vim.log.levels.WARN, { title = 'gglib' })
+        vim.notify('[gglib] ' .. table.concat(problems, '; '), vim.log.levels.WARN, { title = 'gglib' })
       end, 500)
     end,
   })
