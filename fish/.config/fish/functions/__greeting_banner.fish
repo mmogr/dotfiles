@@ -6,7 +6,9 @@ function __greeting_banner --argument-names cols --description 'One-line greetin
     set -l parts
     test -n "$GREETING_BATTERY"; and set -a parts $GREETING_BATTERY
     test -n "$GREETING_LAST"; and set -a parts "last: "(string replace ' · ' ' (' -- $GREETING_LAST)")"
-    if read -l uptime </proc/uptime
+    # Linux only: /proc does not exist on macOS, and fish warns about a
+    # redirect from a missing file even inside `if`.
+    if test -r /proc/uptime; and read -l uptime </proc/uptime
         set -a parts "up "(__greeting_duration (string split -f1 ' ' -- $uptime))
     end
     set -l mem
