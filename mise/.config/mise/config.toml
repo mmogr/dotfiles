@@ -10,6 +10,8 @@
 # ever lags behind what init.lua needs, switch it to "nightly".
 
 [tools]
+# tree-sitter CLI: nvim-treesitter builds every parser with it (needs 0.26.1 or newer)
+"aqua:tree-sitter/tree-sitter" = "0.27.2"
 node = "26"
 rust = "stable"
 "aqua:cli/cli" = "2.103.3"                 # gh

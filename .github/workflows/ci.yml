@@ -89,6 +89,7 @@ jobs:
         run: |
           MISE="$HOME/.local/bin/mise"
           "$MISE" x -- nvim --version | head -1
+          "$MISE" x -- tree-sitter --version
           "$MISE" x -- gh --version | head -1
           "$MISE" x -- lazygit --version
           "$MISE" x -- direnv --version
@@ -141,7 +142,9 @@ jobs:
           "$MISE" x -- cargo --version
           "$MISE" x -- rustc --version
           "$MISE" x -- nvim --version | head -1
+          "$MISE" x -- tree-sitter --version
           "$MISE" x -- node --version
+          cc --version | head -1
       - name: conda and the shells are installed
         run: |
           "$HOME/.local/share/miniconda3/bin/conda" --version
