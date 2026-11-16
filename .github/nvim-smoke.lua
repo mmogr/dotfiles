@@ -38,7 +38,8 @@ end
 -- script cannot download its libraries where gh is not logged in, which is
 -- every runner (https://github.com/mmogr/dotfiles/issues/77). Remove this
 -- allowance when that issue is fixed.
-local known = { '^Build failed for avante%.nvim:', '^make: %*%*%* %[Makefile:%d+: luajit%] Error' }
+-- make words its error differently per platform: "[Makefile:46: luajit]" on Linux, "[luajit]" on macOS.
+local known = { '^Build failed for avante%.nvim:', '^make: %*%*%* %[.-luajit%] Error' }
 local function is_known(line)
   for _, pat in ipairs(known) do
     if line:find(pat) then return true end
