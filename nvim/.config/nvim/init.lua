@@ -1281,7 +1281,8 @@ do
           map('<leader>co', jdtls.organize_imports, 'Organize imports')
           map('<leader>cv', jdtls.extract_variable, 'Extract variable')
           map('<leader>cm', jdtls.extract_method, 'Extract method')
-          map('<leader>cg', jdtls.generate, 'Generate (constructors / getters / setters)')
+          -- nvim-jdtls has no generate function: jdtls offers these as source.generate.* code actions
+          map('<leader>cg', function() vim.lsp.buf.code_action { context = { only = { 'source.generate' } } } end, 'Generate (constructors / getters / setters)')
         end,
       }
     end,
