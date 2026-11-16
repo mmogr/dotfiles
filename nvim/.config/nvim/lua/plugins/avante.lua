@@ -236,7 +236,9 @@ end, { desc = '[A]vante [P]lan mode (read-only)' })
 
 vim.keymap.set('n', '<leader>ae', function()
   require('avante.config').override {
-    system_prompt  = nil,
+    -- '' and not nil: override() merges, so a nil key changes nothing and the
+    -- plan-mode prompt would stay. avante ignores an empty custom prompt.
+    system_prompt  = '',
     disabled_tools = {},
     behaviour      = { auto_approve_tool_permissions = true },
   }
