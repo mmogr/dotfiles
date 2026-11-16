@@ -15,6 +15,18 @@ if vim.g.mapleader ~= ' ' then fail 'leader is not set: the config did not load'
 if vim.fn.maparg('<leader>sf', 'n') == '' then fail '<leader>sf is not mapped: Telescope did not load' end
 if not package.loaded['nvim-treesitter'] then fail 'nvim-treesitter is not loaded: the config stopped early' end
 
+-- A treesitter parser is downloaded and compiled in the background, which needs
+-- the tree-sitter CLI and a C compiler. Build three to completion, joining the
+-- config's own install where it is already under way, so that a machine which
+-- cannot build parsers fails here instead of being cut off when nvim quits.
+local probe = { 'lua', 'vimdoc', 'markdown' }
+local built, err = pcall(function() require('nvim-treesitter').install(probe):wait(300000) end)
+if not built then fail('treesitter install did not finish: ' .. tostring(err)) end
+local parsers = require('nvim-treesitter').get_installed 'parsers'
+for _, lang in ipairs(probe) do
+  if not vim.tbl_contains(parsers, lang) then fail('treesitter parser was not built: ' .. lang) end
+end
+
 -- avante's native libraries were downloaded by the PackChanged build hook.
 for _, p in ipairs(vim.pack.get { 'avante.nvim' }) do
   if #vim.fn.glob(p.path .. '/lua/avante_templates.*', true, true) == 0 then fail 'avante has no native libraries: its build step did not run' end
