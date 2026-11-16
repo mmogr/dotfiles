@@ -94,8 +94,9 @@ Each tier is also a recipe: `just setup-core`, `just setup-desktop`, `just setup
 
 ## Tools managed by mise
 
-`mise/.config/mise/config.toml` pins node, rust, gh, lazygit, direnv, and neovim to exact versions
-on every platform. This replaces per-distro package names and keeps Neovim current on Ubuntu,
+`mise/.config/mise/config.toml` sets node, rust, gh, lazygit, direnv, and neovim for every platform:
+exact versions, except node (pinned to a major) and rust (follows stable). This replaces per-distro
+package names and keeps Neovim current on Ubuntu,
 whose packaged version is too old for the `vim.pack`-based config in `nvim/`.
 
 - `just mise::install` — install mise (if missing) and every pinned tool

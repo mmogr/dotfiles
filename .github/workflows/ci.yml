@@ -101,7 +101,7 @@ jobs:
           done
 
   fresh-machine:
-    name: "full setup on a bare ubuntu:24.04 (no TTY)"
+    name: "full setup on a bare ubuntu:26.04 (no TTY)"
     runs-on: ubuntu-26.04
     container: ubuntu:26.04
     timeout-minutes: 30
