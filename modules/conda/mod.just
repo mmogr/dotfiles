@@ -48,13 +48,10 @@ install:
         exit 0
     fi
     if [ "$OS" = arch ]; then
-        aur_install miniconda3
-        /opt/miniconda3/bin/conda config --set auto_activate_base false
-        echo "miniconda3 installed to /opt/miniconda3 via AUR"
+        just conda::install-aur
     else
         just conda::install-manual
     fi
-    echo "Run: just conda::init"
 
 # Verify the detected conda prefix and confirm auto_activate_base=false
 # Shell hooks (bash/zsh/fish) are managed directly in dotfiles — do NOT run conda init
