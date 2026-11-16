@@ -1,0 +1,11 @@
+# uninotes overlay — merged automatically by podman-stack (behind nbup/nbdown)
+# when ~/.local/src/uninotes exists. Do not use directly.
+#
+# Mounts the uninotes workspace so `quarto render` can run inside this container
+# with the same kernels used for interactive execution in VS Code. It is a
+# separate file so machines without that project get neither the mount nor an
+# empty ~/.local/src/uninotes.
+services:
+  jupyterlab:
+    volumes:
+      - ${HOME}/.local/src/uninotes:/home/jovyan/uninotes:U

@@ -35,7 +35,7 @@ Adding a tool that needs installing: also add `modules/<tool>/mod.just` and a `m
 | `mise` | `~/.config/mise/config.toml` |
 | `nvim` | `~/.config/nvim/` |
 | `dev-db` | `~/.config/dev-db/compose.yml` |
-| `jupyter` | `~/.config/jupyter/{Containerfile,compose.yml,environment.yml}` |
+| `jupyter` | `~/.config/jupyter/{Containerfile,compose.yml,compose.uninotes.yml,environment.yml}` |
 | `vscode` (desktop tier; source `vscode/agents/`) | macOS: `~/Library/Application Support/Code/User/prompts/*.agent.md`<br>Linux: `${XDG_CONFIG_HOME:-~/.config}/Code/User/prompts/*.agent.md` |
 
 `~/.bashrc` and `~/.zshrc` are thin: prompt, history, completion. Everything shared (PATH, conda,
@@ -109,7 +109,8 @@ JupyterLab (Python, Rust, Java, SQL, SoS; Quarto + TinyTeX): `nbup` / `nbdown` /
 `just jupyter::build` after changing the Containerfile or `environment.yml`
 
 All of these wrap `podman-stack <dev-db|jupyter> <compose args>`, which starts the
-podman socket on Linux or the podman machine on macOS and creates the data directories.
+podman socket on Linux or the podman machine on macOS, creates the data directories, and mounts
+`~/.local/src/uninotes` into JupyterLab on machines that have it.
 
 On macOS the `*down` commands also stop the podman machine once no container is left running, and
 do nothing if it is already stopped. `PODMAN_STACK_KEEP_MACHINE=1` keeps it up — use it for a

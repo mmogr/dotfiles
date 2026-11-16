@@ -42,6 +42,5 @@ services:
       - ${HOME}/Downloads:/home/jovyan/downloads:ro
       # HuggingFace model cache — persists downloaded weights across restarts.
       - ${HOME}/.cache/huggingface:/home/jovyan/.cache/huggingface:U
-      # uninotes workspace — mounted so `quarto render` can run inside this
-      # container (same kernels used for interactive execution in VS Code).
-      - ${HOME}/.local/src/uninotes:/home/jovyan/uninotes:U
+      # The uninotes workspace is mounted by compose.uninotes.yml, which
+      # podman-stack adds on machines that have ~/.local/src/uninotes.
