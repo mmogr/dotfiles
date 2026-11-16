@@ -15,6 +15,11 @@ if vim.g.mapleader ~= ' ' then fail 'leader is not set: the config did not load'
 if vim.fn.maparg('<leader>sf', 'n') == '' then fail '<leader>sf is not mapped: Telescope did not load' end
 if not package.loaded['nvim-treesitter'] then fail 'nvim-treesitter is not loaded: the config stopped early' end
 
+-- avante's native libraries were downloaded by the PackChanged build hook.
+for _, p in ipairs(vim.pack.get { 'avante.nvim' }) do
+  if #vim.fn.glob(p.path .. '/lua/avante_templates.*', true, true) == 0 then fail 'avante has no native libraries: its build step did not run' end
+end
+
 -- Every plugin in the lock file is installed at its pinned revision, and nothing else is.
 local lock_path = vim.fn.stdpath 'config' .. '/nvim-pack-lock.json'
 local lock = vim.json.decode(table.concat(vim.fn.readfile(lock_path), '\n')).plugins
@@ -34,21 +39,9 @@ for name in pairs(lock) do
   if not installed[name] then fail(name .. ' is in nvim-pack-lock.json but was not installed') end
 end
 
--- Nothing reported an error. One failure is known and tracked: avante's build
--- script cannot download its libraries where gh is not logged in, which is
--- every runner (https://github.com/mmogr/dotfiles/issues/77). Remove this
--- allowance when that issue is fixed.
--- make words its error differently per platform: "[Makefile:46: luajit]" on Linux, "[luajit]" on macOS.
-local known = { '^Build failed for avante%.nvim:', '^make: %*%*%* %[.-luajit%] Error' }
-local function is_known(line)
-  for _, pat in ipairs(known) do
-    if line:find(pat) then return true end
-  end
-  return false
-end
+-- Nothing reported an error.
 for line in vim.fn.execute('messages'):gmatch '[^\n]+' do
-  local bad = line:find '^E%d+:' or line:find '[Ee]rror' or line:find '[Ff]ailed' or line:find 'stack traceback'
-  if bad and not is_known(line) then fail('message: ' .. line) end
+  if line:find '^E%d+:' or line:find '[Ee]rror' or line:find '[Ff]ailed' or line:find 'stack traceback' then fail('message: ' .. line) end
 end
 
 if #problems > 0 then
