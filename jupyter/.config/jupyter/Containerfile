@@ -29,10 +29,13 @@ RUN apt-get update --quiet && \
         pkg-config \
         libssl-dev \
         unzip && \
+    ln -s "java-21-openjdk-$(dpkg --print-architecture)" /usr/lib/jvm/java-21-openjdk && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+# The JDK directory is named after the architecture (java-21-openjdk-amd64,
+# java-21-openjdk-arm64). The link created above is right on both.
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # ── 2. Root layer: install JJava kernel (dflib/jjava 1.0-a7) ─────────────────
