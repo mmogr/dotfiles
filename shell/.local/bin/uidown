@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-# uidown — stop Open WebUI (see podman-stack)
-exec "$(dirname "$0")/podman-stack" open-webui down "$@"
