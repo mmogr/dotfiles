@@ -17,9 +17,8 @@ function M.gh(repo) return 'https://github.com/' .. repo end
 local function run_build(name, cmd, cwd)
   local result = vim.system(cmd, { cwd = cwd }):wait()
   if result.code ~= 0 then
-    local stderr = result.stderr or ''
-    local stdout = result.stdout or ''
-    local output = stderr ~= '' and stderr or stdout
+    -- Both streams: the reason is often on stdout, with only make's last line on stderr.
+    local output = vim.trim((result.stdout or '') .. '\n' .. (result.stderr or ''))
     if output == '' then output = 'No output from build command.' end
     vim.notify(('Build failed for %s:\n%s'):format(name, output), vim.log.levels.ERROR)
   end
@@ -49,8 +48,11 @@ vim.api.nvim_create_autocmd('PackChanged', {
       return
     end
 
-    if name == 'avante.nvim' and vim.fn.executable 'make' == 1 then
-      run_build(name, { 'make' }, ev.data.path)
+    if name == 'avante.nvim' then
+      -- Download the prebuilt libraries of the release that was checked out.
+      -- build.sh needs only curl and tar; `make` would compile them with cargo.
+      local version = dofile(ev.data.path .. '/lua/avante/version.lua')
+      run_build(name, { 'bash', 'build.sh', version }, ev.data.path)
       return
     end
   end,
