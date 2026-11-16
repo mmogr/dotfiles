@@ -12,9 +12,10 @@
       "groupSlug": "all-minor-patch"
     },
     {
-      "description": "Jupyter base image uses a floating tag; pin and refresh its digest instead",
+      "description": "Jupyter base image tags name an Ubuntu release (ubuntu-26.04). Read the tag as a version so a newer release arrives as a major PR, and pin its digest so rebuilds of the same tag arrive too. Upstream stops rebuilding a tag once it moves to the next release",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["quay.io/jupyter/minimal-notebook"],
+      "versioning": "regex:^ubuntu-(?<major>\\d+)\\.(?<minor>\\d+)$",
       "pinDigests": true
     },
     {
