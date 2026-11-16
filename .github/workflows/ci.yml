@@ -72,10 +72,17 @@ jobs:
           test -f "$HOME/.config/nvim/init.lua.bak"
           test -L "$HOME/.config/nvim/init.lua"
           test -L "$HOME/.bashrc"
-          test -L "$HOME/.config/mise/config.toml" || test -L "$HOME/.config/mise"
+          test -L "$HOME/.config/mise/config.toml"
           readlink -f "$HOME/.config/nvim/init.lua" | grep -q "$GITHUB_WORKSPACE/nvim/"
       - name: Verify stow state and repo cleanliness
         run: just check
+      - name: A file added to a package is reported until it is linked
+        run: |
+          touch shell/.local/bin/ci-probe
+          if just check > "$RUNNER_TEMP/check.out" 2>&1; then echo "check passed with an unlinked file"; exit 1; fi
+          grep -A1 'NOT LINKED' "$RUNNER_TEMP/check.out" | grep 'LINK: .local/bin/ci-probe'
+          rm shell/.local/bin/ci-probe
+          just check
       - name: Install mise and the core tools
         run: just mise::install
       - name: Smoke-test the mise-managed tools
@@ -137,3 +144,14 @@ jobs:
           bash -c '. ~/.bashrc && echo "bashrc sourced OK"'
       - name: A second setup is a silent no-op
         run: just setup
+      - name: Nothing in the home directory is a directory link into the repo
+        run: |
+          # Stow must link files only. A linked directory (~/.local on a new
+          # machine, before --no-folding) sends everything written there into the checkout.
+          for d in "$HOME/.local" "$HOME/.local/bin" "$HOME/.config" "$HOME/.config/mise" "$HOME/.config/nvim" "$HOME/.config/fish"; do
+            test -d "$d"
+            if [ -L "$d" ]; then echo "$d is a link to $(readlink "$d")"; exit 1; fi
+          done
+          test -x "$HOME/.local/bin/mise" && test ! -e shell/.local/bin/mise
+      - name: Setup wrote nothing into the repo, and everything is linked
+        run: just check

@@ -175,28 +175,41 @@ check:
         FAILED=1
     fi
 
-    # 2. Stow packages — dry-run restow into $HOME (the same explicit target
-    #    stow-safe.sh uses); a non-zero exit or conflict output means out of sync
+    # 2. Stow packages — dry run into the same explicit target stow-safe.sh
+    #    uses. Three things can be wrong, and `just stow-all` fixes each:
+    #      - a real file sits where a link belongs (stow reports a conflict)
+    #      - a tracked file has no link yet (the dry run lists what it would do)
+    #      - a directory is itself a link into the repo, left by a stow from
+    #        before --no-folding; whatever is written there lands in the checkout
     check_stow() {
-        # $1 label, then the stow arguments
-        label="$1"; shift
-        printf "stow %-12s ... " "$label"
-        if OUT=$(cd "$DOTFILES" && stow -n -R "$@" 2>&1) && ! printf '%s\n' "$OUT" | grep -qE "cannot stow|ERROR"; then
-            echo "OK"
-        else
+        # $1 label, $2 stow dir, $3 target dir, $4 package
+        printf "stow %-12s ... " "$1"
+        STATUS=0
+        OUT=$(cd "$2" && stow -n -v --no-folding -t "$3" "$4" 2>&1) || STATUS=$?
+        PENDING=$(printf '%s\n' "$OUT" | grep -E '^(LINK|MKDIR|UNLINK|RMDIR|MV): ' || true)
+        FOLDED=$(cd "$2/$4" && find . -mindepth 1 -type d | while IFS= read -r d; do
+            if [ -L "$3/$d" ]; then echo "directory link into the repo: $3/${d#./}"; fi
+        done)
+        if [ "$STATUS" -ne 0 ] || printf '%s\n' "$OUT" | grep -qE "cannot stow|ERROR"; then
             echo "OUT OF SYNC"
             printf '%s\n' "$OUT" | grep -v "simulation mode" | sed 's/^/  /'
             FAILED=1
+        elif [ -n "$PENDING" ] || [ -n "$FOLDED" ]; then
+            echo "NOT LINKED"
+            printf '%s\n' "$PENDING" "$FOLDED" | grep -v '^$' | sed 's/^/  /'
+            FAILED=1
+        else
+            echo "OK"
         fi
     }
     for PKG in {{packages}}; do
-        check_stow "$PKG" -t "$HOME" "$PKG"
+        check_stow "$PKG" "$DOTFILES" "$HOME" "$PKG"
     done
 
     # 3. vscode/agents — desktop tier, custom target; only checked once that target exists
     . "$DOTFILES/lib/paths.sh"
     if [ -d "$VSCODE_PROMPTS_DIR" ]; then
-        check_stow "vscode" -d "$DOTFILES/vscode" -t "$VSCODE_PROMPTS_DIR" agents
+        check_stow "vscode" "$DOTFILES/vscode" "$VSCODE_PROMPTS_DIR" agents
     else
         printf "stow %-12s ... skipped (desktop tier not installed)\n" "vscode"
     fi

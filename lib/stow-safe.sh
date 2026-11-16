@@ -35,12 +35,19 @@ else
     BASE="$HOME"
 fi
 
+# --no-folding: create real directories and link only files. By default stow
+# links a whole directory when nothing else is in it yet. On a new machine that
+# turns ~/.local and ~/.config/<tool> into links to directories in this repo,
+# and everything a program then writes there (installed tools, plugin and
+# container data, fish_variables) lands in the checkout. Restowing with this
+# flag also replaces such a directory link, left by an earlier stow, with a
+# real directory.
 stow_dry_run() {
-    (cd "$DOTFILES" && stow -n -R -t "$BASE" "$PKG") 2>&1
+    (cd "$DOTFILES" && stow -n -R --no-folding -t "$BASE" "$PKG") 2>&1
 }
 
 stow_real_run() {
-    (cd "$DOTFILES" && stow -R -t "$BASE" "$PKG")
+    (cd "$DOTFILES" && stow -R --no-folding -t "$BASE" "$PKG")
 }
 
 # Dry-run to detect conflicts (real files, not symlinks). The wording differs
