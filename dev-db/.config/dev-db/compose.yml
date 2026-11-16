@@ -34,4 +34,8 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
     volumes:
+      # MySQL only opens a data dir written by its own release line or by the LTS
+      # just before it (8.4 -> 9.7 -> 26.x). After a bump that skips an LTS, start
+      # each one in between once on this dir, or move the dir aside for a fresh
+      # one; otherwise the container exits with "Invalid MySQL server upgrade".
       - ${HOME}/.local/share/dev-db/mysql:/var/lib/mysql:U

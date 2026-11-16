@@ -6,6 +6,15 @@
   "labels": ["dependencies"],
   "packageRules": [
     {
+      "description": "A new major of a database image cannot simply open the data dir the old one wrote; say so in the PR",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker.io/library/mysql", "docker.io/library/postgres"],
+      "matchUpdateTypes": ["major"],
+      "prBodyNotes": [
+        "**This is a major bump of a database image.** The data dir under `~/.local/share/dev-db/` has to be migrated or replaced before the new image will start; see the volume comments in `dev-db/.config/dev-db/compose.yml`."
+      ]
+    },
+    {
       "description": "One weekly PR for everything that is not a major bump",
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "all non-major updates",
