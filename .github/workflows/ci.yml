@@ -23,16 +23,22 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - name: Install shellcheck and just
+      - name: Install shellcheck, fish and just
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y shellcheck
+          sudo apt-get install -y shellcheck fish
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --tag "$JUST_VERSION" --to "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: shellcheck (POSIX sh files)
         run: shellcheck -S warning -s sh lib/*.sh shell/.local/bin/* shell/.config/shell/*.sh
       - name: shellcheck (bash files)
         run: shellcheck -S warning -s bash bash/.bashrc bash/.bash_profile
+      - name: fish parses the fish config and every function
+        run: |
+          fish --version
+          for f in fish/.config/fish/config.fish fish/.config/fish/functions/*.fish; do
+            fish --no-execute "$f" || { echo "syntax error: $f"; exit 1; }
+          done
       - name: just parses the Justfile and every module
         run: just --list
       - name: Dry-run every recipe (catches broken interpolation in recipe bodies)
@@ -95,6 +101,10 @@ jobs:
           "$MISE" x -- direnv --version
           "$MISE" x -- node --version
           "$MISE" x -- cargo --version
+      - name: Neovim starts, installs every pinned plugin, and reports no errors
+        run: |
+          "$HOME/.local/bin/mise" x -- nvim --headless -c 'luafile .github/nvim-smoke.lua'
+          git diff --exit-code -- nvim/.config/nvim/nvim-pack-lock.json
       - name: Shell configs parse and source
         run: |
           bash -n bash/.bashrc bash/.bash_profile shell/.config/shell/env.sh

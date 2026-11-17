@@ -145,8 +145,9 @@ Neovim with `:lua vim.pack.update()` and committed like any other change.
     just check
 
 Confirms the repo is clean and every stow package (plus the VS Code agents, once the desktop tier
-is installed) is correctly linked. CI runs the same check on Ubuntu and macOS, plus shellcheck and
-a mise install of the pinned tools.
+is installed) is correctly linked. CI runs the same check on Ubuntu and macOS, plus shellcheck, a
+fish syntax check, a mise install of the pinned tools, and a first start of Neovim that installs
+every plugin at its pinned revision and must report no errors.
 
 ## VS Code Rust tasks
 
