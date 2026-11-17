@@ -7,13 +7,14 @@
 #       name  = Your Name
 #       email = you@example.com
 #
-# `just git::init` will create a blank ~/.gitconfig-local if one doesn't exist.
+# `just git::init` creates ~/.gitconfig-local if it doesn't exist, asking for both
+# values (or writing placeholders when there is no terminal).
 
 [include]
     path = ~/.gitconfig-local
 
 # ── Credentials ───────────────────────────────────────────────────────────────
-# Delegate to the gh CLI for GitHub token auth (set up by just gh::install)
+# Delegate to the gh CLI for GitHub token auth (gh is installed by mise: just mise::install)
 [credential "https://github.com"]
     helper =
     helper = !/usr/bin/env gh auth git-credential
