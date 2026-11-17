@@ -6,8 +6,11 @@
 # Envs:      nb_conda_kernels — any conda env with ipykernel auto-appears as kernel
 # Runtime:   Rootless Podman — jovyan (UID 1000) with :U volume remapping
 
-# Base image: Renovate pins and refreshes the digest for this tag (see renovate.json).
-FROM quay.io/jupyter/minimal-notebook:ubuntu-22.04@sha256:1a71fc04b26ede434ef16bf25e323cbfa3d0e46469eb518d0fd9e5b9e312e869
+# Base image: upstream only rebuilds the tag of its current Ubuntu release, and
+# an older tag stops changing for good. Renovate therefore treats the tag as a
+# version (ubuntu-26.04 -> ubuntu-28.04, a major PR) and refreshes its digest in
+# between (see renovate.json).
+FROM quay.io/jupyter/minimal-notebook:ubuntu-26.04@sha256:26ff442c8f85dace0f83c8c2b3969a4ba3ca1218c8544d4faa6740bfc2be3788
 
 # ── Pinned versions ───────────────────────────────────────────────────────────
 # Each ARG carries a renovate comment so version bumps arrive as PRs.
