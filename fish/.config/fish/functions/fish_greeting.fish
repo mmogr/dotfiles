@@ -47,7 +47,8 @@ function __greeting_draw --argument-names layout
         case full
             fastfetch
         case small
-            fastfetch --logo CachyOS_small
+            # The small variant of whichever logo this OS gets, not CachyOS's by name.
+            fastfetch --logo-type small
         case none
             fastfetch --logo none
     end
