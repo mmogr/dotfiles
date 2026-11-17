@@ -5,7 +5,7 @@
 # Layout:
 #   <package>/          stow package — files in their real $HOME-relative shape
 #   modules/<tool>/     just module — install/init recipes for one tool
-#   lib/                helpers sourced by recipes (detect.sh, paths.sh, stow-safe.sh)
+#   lib/                helpers sourced by recipes (detect.sh, paths.sh, backup.sh, stow-safe.sh)
 #
 # Adding a stow-only tool: create the package folder and add its name to `packages`.
 # Adding a tool that needs installing: also add modules/<tool>/mod.just + a `mod` line.
@@ -151,10 +151,12 @@ stow-all: backup-defaults
 # Back up pre-existing default files that would collide with stow (only files we replace)
 backup-defaults:
     #!/usr/bin/env sh
+    . "{{justfile_directory()}}/lib/backup.sh"
     for f in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.zshrc" "$HOME/.gitconfig"; do
         if [ -e "$f" ] && [ ! -L "$f" ]; then
-            echo "Backing up $f -> $f.bak"
-            mv "$f" "$f.bak"
+            backup=$(backup_path "$f")
+            echo "Backing up $f -> $backup"
+            mv "$f" "$backup"
         fi
     done
 

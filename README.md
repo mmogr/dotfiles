@@ -11,7 +11,7 @@ Supported platforms: macOS, Ubuntu/Debian, Arch/CachyOS.
 - `<package>/` — a stow package. Files sit in their real `$HOME`-relative shape (e.g. `nvim/.config/nvim/`).
 - `modules/<tool>/mod.just` — install/init recipes for one tool.
 - `lib/` — helpers sourced by recipes: `detect.sh` (OS + package manager), `paths.sh` (OS-dependent
-  targets), `stow-safe.sh` (stow with conflict backup).
+  targets), `backup.sh` (a backup name that is not taken), `stow-safe.sh` (stow with conflict backup).
 - `packages` in `Justfile` — the single list of stow packages, used by `stow-all` and `check`.
 
 Stow always targets `$HOME` explicitly, so the clone can live anywhere; `~/.dotfiles` is just the

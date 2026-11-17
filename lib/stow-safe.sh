@@ -2,7 +2,7 @@
 # lib/stow-safe.sh <dotfiles-dir> <package> [target-dir]
 #
 # Stow a package. If real (non-symlink) files would conflict, prompt:
-#   [y] back them up to .bak and stow
+#   [y] back them up to .bak (.bak.1, .bak.2, ... if that is taken) and stow
 #   [N] skip this package
 # Without a terminal on stdin the backup happens automatically.
 #
@@ -19,6 +19,8 @@
 #       sh {{justfile_directory()}}/lib/stow-safe.sh {{justfile_directory()}} <pkg> "$TARGET_DIR"
 
 set -e
+
+. "$(dirname "$0")/backup.sh"
 
 DOTFILES="$1"
 PKG="$2"
@@ -79,8 +81,9 @@ case "$answer" in
     y|Y)
         echo "$conflicts" | while IFS= read -r rel; do
             target="$BASE/$rel"
-            echo "  $target -> $target.bak"
-            mv "$target" "$target.bak"
+            backup=$(backup_path "$target")
+            echo "  $target -> $backup"
+            mv "$target" "$backup"
         done
         stow_real_run
         ;;
