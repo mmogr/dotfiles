@@ -36,8 +36,14 @@ local gh = require('config.pack').gh
 vim.pack.add { gh 'MeanderingProgrammer/render-markdown.nvim' }
 require('render-markdown').setup { file_types = { 'markdown', 'Avante' } }
 
--- avante.nvim — requires build step (Rust); runs automatically on install/update
-vim.pack.add { gh 'yetone/avante.nvim' }
+-- avante.nvim, on tagged releases. Its native libraries are downloaded for the
+-- checked-out release on install/update (the PackChanged hook in config/pack.lua).
+vim.pack.add {
+  gh 'MunifTanjim/nui.nvim',
+  gh 'ColinKennedy/mega.logging',  -- required by mega.cmdparse
+  gh 'ColinKennedy/mega.cmdparse', -- parses avante's : commands
+  { src = gh 'avante-corp/avante.nvim', version = vim.version.range '0.*' },
+}
 -- avante's run_python tool shells out to `docker run`. With no Docker daemon,
 -- point the docker CLI at the rootless podman socket (just podman::enable-socket).
 do
@@ -184,13 +190,27 @@ local PLAN_DISABLED_TOOLS = {
   -- code / command execution (all known names; hallucinated names also listed)
   'bash',        'python',        'run_python',      'run_code',
   'execute',
-  -- external I/O (network)
-  'web_search',  'fetch',
+  -- external I/O (network); see plan_disabled_tools() for the other web_search_* names
+  'web_search',  'web_search_tavily', 'fetch',
   -- git mutation
   'git_commit',
   -- meta / orchestration
   'write_todos', 'dispatch_agent',
 }
+
+-- Since avante 0.5 a web search tool is named after its engine: web_search_tavily
+-- is built in, and one added through custom_tools is web_search_<engine>. Add
+-- whichever are registered, so plan mode keeps the network off for all of them.
+local function plan_disabled_tools()
+  local disabled = vim.list_slice(PLAN_DISABLED_TOOLS)
+  local ok, tools = pcall(function() return require('avante.llm_tools').get_tools('', {}, false) end)
+  for _, tool in ipairs(ok and tools or {}) do
+    if type(tool.name) == 'string' and tool.name:find '^web_search' and not vim.tbl_contains(disabled, tool.name) then
+      table.insert(disabled, tool.name)
+    end
+  end
+  return disabled
+end
 
 vim.keymap.set('n', '<leader>ap', function()
   require('avante.config').override {
@@ -207,7 +227,7 @@ vim.keymap.set('n', '<leader>ap', function()
       .. ' broad questions. Use your read tools to investigate the codebase first,'
       .. ' and formulate highly specific, targeted questions based on what you found.'
       .. ' Wait for the user\'s response before continuing.',
-    disabled_tools = PLAN_DISABLED_TOOLS,
+    disabled_tools = plan_disabled_tools(),
     behaviour      = { auto_approve_tool_permissions = false },
   }
   vim.notify('[avante] PLAN MODE — read-only tools only', vim.log.levels.INFO, { title = 'avante' })

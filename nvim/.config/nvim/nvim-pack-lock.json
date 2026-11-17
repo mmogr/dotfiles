@@ -6,8 +6,9 @@
       "version": "2.0.0 - 3.0.0"
     },
     "avante.nvim": {
-      "rev": "80c4fdf3c7960b6dc9f1c67660bd6bcbc6c3002c",
-      "src": "https://github.com/yetone/avante.nvim"
+      "rev": "6b0c359ff11ecb464a877273851888b3c5e99d57",
+      "src": "https://github.com/avante-corp/avante.nvim",
+      "version": "0.0.0 - 1.0.0"
     },
     "blink.cmp": {
       "rev": "78336bc89ee5365633bcf754d93df01678b5c08f",
@@ -45,6 +46,14 @@
     "mason.nvim": {
       "rev": "cbf8d285e1462dd24acf3507817be2bbcb035919",
       "src": "https://github.com/mason-org/mason.nvim"
+    },
+    "mega.cmdparse": {
+      "rev": "47ea5b1b23059fbb79a8e262002f32e7cd8aed90",
+      "src": "https://github.com/ColinKennedy/mega.cmdparse"
+    },
+    "mega.logging": {
+      "rev": "194ad8c300186e73c3eb1ebeb3ede42eb219be3b",
+      "src": "https://github.com/ColinKennedy/mega.logging"
     },
     "mini.nvim": {
       "rev": "95fdea57f1ec4ead21fa582f9df56c2f93b8649f",
