@@ -15,7 +15,8 @@ Supported platforms: macOS, Ubuntu/Debian, Arch/CachyOS.
 - `packages` in `Justfile` — the single list of stow packages, used by `stow-all` and `check`.
 
 Stow always targets `$HOME` explicitly, so the clone can live anywhere; `~/.dotfiles` is just the
-convention used below.
+convention used below. It links files only, never whole directories (`--no-folding`), so nothing a
+program writes under `~/.config` or `~/.local` ends up in the repo.
 
 Adding a stow-only tool: create the package folder and add its name to `packages`.
 Adding a tool that needs installing: also add `modules/<tool>/mod.just` and a `mod` line in `Justfile`.
