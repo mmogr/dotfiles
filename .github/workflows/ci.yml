@@ -116,6 +116,14 @@ jobs:
             echo "== $stack"
             "$HOME/.local/bin/podman-stack" "$stack" config > /dev/null
           done
+          # An image build cannot follow a link out of its context, and stow links
+          # every file, so the context must be the directory holding the real files.
+          ctx=$("$HOME/.local/bin/podman-stack" jupyter config | sed -n 's/^ *context: *//p' | head -1)
+          echo "build context: $ctx"
+          for f in Containerfile environment.yml; do
+            test -f "$ctx/$f"
+            if [ -L "$ctx/$f" ]; then echo "$ctx/$f is a link"; exit 1; fi
+          done
           # The uninotes overlay is merged only on machines that have the project.
           if "$HOME/.local/bin/podman-stack" jupyter config | grep -q 'jovyan/uninotes'; then
             echo "uninotes is mounted without the project being there"; exit 1
