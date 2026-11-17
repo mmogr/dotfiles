@@ -18,9 +18,9 @@
       "pinDigests": true
     },
     {
-      "description": "JJava tags look like 1.0-a8, which is not semver",
+      "description": "JJava tags look like 1.0-a8, which is not semver. Only that alpha series counts as a version: loose versioning ranked the older 1.0-M3 milestone above 1.0-a7. Widen the pattern when JJava ships a beta or 1.0",
       "matchPackageNames": ["dflib/jjava"],
-      "versioning": "loose"
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)-a(?<patch>\\d+)$"
     }
   ],
   "customManagers": [
