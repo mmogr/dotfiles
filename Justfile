@@ -11,7 +11,7 @@
 # Adding a tool that needs installing: also add modules/<tool>/mod.just + a `mod` line.
 
 # Stow packages, in stow order. Single source of truth for stow-all and check.
-packages := "shell bash zsh fish fastfetch git direnv mise nvim dev-db open-webui jupyter"
+packages := "shell bash zsh fish fastfetch git direnv mise nvim dev-db jupyter"
 
 mod conda      'modules/conda/mod.just'
 mod fish       'modules/fish/mod.just'
@@ -19,7 +19,6 @@ mod git        'modules/git/mod.just'
 mod jetbrains  'modules/jetbrains/mod.just'
 mod jupyter    'modules/jupyter/mod.just'
 mod mise       'modules/mise/mod.just'
-mod open-webui 'modules/open-webui/mod.just'
 mod podman     'modules/podman/mod.just'
 mod vscode     'modules/vscode/mod.just'
 mod zed        'modules/zed/mod.just'
@@ -30,7 +29,7 @@ mod zsh        'modules/zsh/mod.just'
 # Tiers:
 #   core        every machine — shells, conda, mise-managed CLI tools, git identity
 #   desktop     VS Code, Zed, JetBrains Toolbox, VS Code agent files
-#   containers  podman, dev databases, JupyterLab image, Open WebUI
+#   containers  podman, dev databases, JupyterLab image
 #
 # `just setup` asks once which tiers this machine gets (saved to
 # ~/.config/dotfiles/profile) and is silent on every later run.
@@ -75,12 +74,11 @@ setup-desktop:
     just zed::install
     just jetbrains::install
 
-# Tier: podman, Open WebUI secrets, JupyterLab image (slow on first build)
+# Tier: podman, dev databases, JupyterLab image (slow on first build)
 setup-containers:
     just podman::install
     just podman::enable-socket
     just podman::machine-init
-    just open-webui::secrets
     just jupyter::build
 
 # Ask what this machine is for and save the answers (re-run any time to change them)
@@ -112,7 +110,7 @@ profile:
     echo "Machine profile — core (shells, conda, mise tools incl. Rust, git) is always installed."
     RUBY=$(ask "Ruby via mise? (compiled from source, several minutes)" "$RUBY")
     DESKTOP=$(ask "Desktop apps? (VS Code, Zed, JetBrains Toolbox, VS Code agents)" "$DESKTOP")
-    CONTAINERS=$(ask "Containers? (podman, dev databases, JupyterLab image, Open WebUI)" "$CONTAINERS")
+    CONTAINERS=$(ask "Containers? (podman, dev databases, JupyterLab image)" "$CONTAINERS")
     mkdir -p "$(dirname "$PROFILE")" "$(dirname "$MISE_LOCAL")"
     {
         echo "# Written by \`just profile\` — re-run it to change these answers."

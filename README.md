@@ -24,7 +24,7 @@ Adding a tool that needs installing: also add `modules/<tool>/mod.just` and a `m
 
 | Package | Symlinks into |
 |---|---|
-| `shell` | `~/.config/shell/{aliases.sh,env.sh}`, `~/.local/bin/{podman-stack,pgup,myup,dbdown,nbup,nbdown,uiup,uidown}` |
+| `shell` | `~/.config/shell/{aliases.sh,env.sh}`, `~/.local/bin/{podman-stack,pgup,myup,dbdown,nbup,nbdown}` |
 | `bash` | `~/.bashrc`, `~/.bash_profile` |
 | `zsh` | `~/.zshrc` |
 | `fish` | `~/.config/fish/config.fish`, `~/.config/fish/functions/` (greeting and window title) |
@@ -34,7 +34,6 @@ Adding a tool that needs installing: also add `modules/<tool>/mod.just` and a `m
 | `mise` | `~/.config/mise/config.toml` |
 | `nvim` | `~/.config/nvim/` |
 | `dev-db` | `~/.config/dev-db/compose.yml` |
-| `open-webui` | `~/.config/open-webui/{docker-compose.yml,docker-compose.gpu.yml,.env.example}` |
 | `jupyter` | `~/.config/jupyter/{Containerfile,compose.yml,environment.yml}` |
 | `vscode` (desktop tier; source `vscode/agents/`) | macOS: `~/Library/Application Support/Code/User/prompts/*.agent.md`<br>Linux: `${XDG_CONFIG_HOME:-~/.config}/Code/User/prompts/*.agent.md` |
 
@@ -43,16 +42,14 @@ direnv, mise) is in `~/.config/shell/env.sh`. Fish has the same logic in its own
 
 ## Tracked vs local
 
-Tracked: compose/config files, shell configs, editor config, template env files (`.env.example`),
-the Neovim plugin lock file.
+Tracked: compose/config files, shell configs, editor config, the Neovim plugin lock file.
 
 Local only (never tracked):
 
 - `~/.config/dotfiles/profile` — which tiers this machine gets (written by `just profile`)
 - `~/.config/mise/conf.d/local.toml` — per-machine mise tools such as Ruby (written by `just profile`)
 - `~/.gitconfig-local` — git identity (written by `just git::init`)
-- `~/.config/open-webui/.env` — secrets
-- Runtime data under `~/.local/share/`: `open-webui/data`, `dev-db/{postgres,mysql}`,
+- Runtime data under `~/.local/share/`: `dev-db/{postgres,mysql}`,
   `jupyter/{notebooks,conda-envs}`. Created on demand by the `podman-stack` helper.
 
 ## Bootstrap
@@ -77,10 +74,6 @@ Local only (never tracked):
    Every later run is silent and safe to repeat. With no terminal attached (CI, piped) it
    installs the core tier only. Change the answers any time with `just profile`.
 
-4. If you chose containers, fill in the secrets file:
-
-       $EDITOR ~/.config/open-webui/.env
-
 ### Tiers
 
 | Tier | Always? | Installs |
@@ -88,7 +81,7 @@ Local only (never tracked):
 | core | yes | fish, zsh, conda, mise + its tools (node, rust, gh, lazygit, direnv, neovim), git identity |
 | Ruby | asked | `ruby = "3"` via mise (compiled from source, several minutes) |
 | desktop | asked | VS Code (+ agent files), Zed, JetBrains Toolbox |
-| containers | asked | podman (+ rootless socket, or a podman machine on macOS), Open WebUI secrets, JupyterLab image build (~15 min first time) |
+| containers | asked | podman (+ rootless socket, or a podman machine on macOS), JupyterLab image build (~15 min first time) |
 
 Each tier is also a recipe: `just setup-core`, `just setup-desktop`, `just setup-containers`.
 
@@ -109,29 +102,27 @@ Shells, podman, conda, and GUI apps stay with the system package manager.
 
 ## Daily commands
 
-Open WebUI: `uiup` / `uidown` / `uilog`
 Databases on demand: `pgup` (Postgres), `myup` (MySQL), `dbdown` (stop both)
 JupyterLab (Python, Rust, Java, SQL, SoS; Quarto + TinyTeX): `nbup` / `nbdown` / `nblog`,
 `just jupyter::build` after changing the Containerfile or `environment.yml`
 
-All of these wrap `podman-stack <dev-db|jupyter|open-webui> <compose args>`, which starts the
-podman socket on Linux or the podman machine on macOS, creates the data directories, and adds the
-AMD GPU overlay for Open WebUI when `/dev/dri` and `/dev/kfd` exist.
+All of these wrap `podman-stack <dev-db|jupyter> <compose args>`, which starts the
+podman socket on Linux or the podman machine on macOS and creates the data directories.
 
 On macOS the `*down` commands also stop the podman machine once no container is left running, and
 do nothing if it is already stopped. `PODMAN_STACK_KEEP_MACHINE=1` keeps it up — use it for a
 `*down` while `just jupyter::build` is running, because a build does not count as a running
 container.
 
-Every service binds to `127.0.0.1` only. Jupyter runs without a token, Open WebUI without auth,
-and the databases with default passwords, so nothing is reachable from the network.
+Every service binds to `127.0.0.1` only. Jupyter runs without a token and the databases with
+default passwords, so nothing is reachable from the network.
 
 In any notebook, connect to dev-db with two lines:
 
     %load_ext sql
     %sql $POSTGRES_URL   # or $MYSQL_URL or $SQLITE_URL
 
-JupyterLab serves at http://localhost:8890, Open WebUI at http://localhost:3000.
+JupyterLab serves at http://localhost:8890.
 
 ## Keeping versions fresh
 

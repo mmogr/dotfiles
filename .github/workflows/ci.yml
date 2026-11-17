@@ -94,8 +94,7 @@ jobs:
       - name: Compose files parse through podman-stack (Linux only)
         if: runner.os == 'Linux'
         run: |
-          just open-webui::secrets
-          for stack in dev-db jupyter open-webui; do
+          for stack in dev-db jupyter; do
             echo "== $stack"
             "$HOME/.local/bin/podman-stack" "$stack" config > /dev/null
           done

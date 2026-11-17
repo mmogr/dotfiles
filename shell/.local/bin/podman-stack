@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # podman-stack — run `podman compose` for one of the dotfiles stacks.
 #
-#   podman-stack <dev-db|jupyter|open-webui> <compose args...>
+#   podman-stack <dev-db|jupyter> <compose args...>
 #   e.g. podman-stack dev-db up -d postgres
 #
 # Before delegating to podman compose it:
@@ -9,7 +9,6 @@
 #     podman machine (a VM) on macOS — see "Backend lifecycle" below
 #   - creates the stack's bind-mount source directories; host data lives under
 #     ~/.local/share and is never tracked
-#   - adds the AMD GPU overlay for open-webui when /dev/dri and /dev/kfd exist
 #
 # After a teardown (down, stop) on macOS it stops the podman machine again once
 # no container is left running. PODMAN_STACK_KEEP_MACHINE=1 skips that.
@@ -21,12 +20,12 @@
 # The compose verb (up, down, build, ...) must be the first compose argument:
 # it decides what happens to the backend.
 #
-# The short commands next to this script (pgup, nbup, uiup, ...) are wrappers.
+# The short commands next to this script (pgup, myup, nbup, ...) are wrappers.
 set -e
 
 STACK="$1"
 if [ -z "$STACK" ]; then
-    echo "usage: podman-stack <dev-db|jupyter|open-webui> <compose args...>" >&2
+    echo "usage: podman-stack <dev-db|jupyter> <compose args...>" >&2
     exit 1
 fi
 shift
@@ -53,16 +52,8 @@ case "$STACK" in
         ensure_dirs "$DATA/jupyter/notebooks" "$DATA/jupyter/conda-envs" \
                     "$HOME/.cache/huggingface" "$HOME/.local/src/uninotes" "$HOME/Downloads"
         ;;
-    open-webui)
-        if [ -e /dev/dri ] && [ -e /dev/kfd ]; then
-            set -- -f "$CONF/open-webui/docker-compose.yml" -f "$CONF/open-webui/docker-compose.gpu.yml" "$@"
-        else
-            set -- -f "$CONF/open-webui/docker-compose.yml" "$@"
-        fi
-        ensure_dirs "$DATA/open-webui/data"
-        ;;
     *)
-        echo "podman-stack: unknown stack '$STACK' (expected dev-db, jupyter, or open-webui)" >&2
+        echo "podman-stack: unknown stack '$STACK' (expected dev-db or jupyter)" >&2
         exit 1
         ;;
 esac

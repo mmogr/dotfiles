@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-# uiup — start Open WebUI (GPU overlay if present) (see podman-stack)
-exec "$(dirname "$0")/podman-stack" open-webui up -d "$@"
