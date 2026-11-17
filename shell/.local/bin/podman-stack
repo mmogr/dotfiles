@@ -43,18 +43,38 @@ ensure_dirs() {
     done
 }
 
+# The directory that really holds a stack's files. Stow links each file in
+# ~/.config/<stack> into the repo one by one, and an image build cannot follow a
+# link that leaves its build context, so compose is given the files themselves.
+# The directory keeps the stack's name either way, which compose uses as the
+# project name.
+stack_dir() {
+    link=$(readlink "$CONF/$1/compose.yml" 2>/dev/null) || link=compose.yml
+    (cd "$CONF/$1" 2>/dev/null && cd "$(dirname "$link")" && pwd -P)
+}
+
+case "$STACK" in
+    dev-db | jupyter)
+        DIR=$(stack_dir "$STACK") || DIR=""
+        if [ ! -f "$DIR/compose.yml" ]; then
+            echo "podman-stack: $CONF/$STACK/compose.yml not found — run: just stow-all" >&2
+            exit 1
+        fi
+        ;;
+esac
+
 case "$STACK" in
     dev-db)
-        set -- -f "$CONF/dev-db/compose.yml" "$@"
+        set -- -f "$DIR/compose.yml" "$@"
         ensure_dirs "$DATA/dev-db/postgres" "$DATA/dev-db/mysql"
         ;;
     jupyter)
         # uninotes is a personal project: mount it where it is checked out,
         # and never create it just to satisfy the mount.
         if [ -d "$HOME/.local/src/uninotes" ]; then
-            set -- -f "$CONF/jupyter/compose.yml" -f "$CONF/jupyter/compose.uninotes.yml" "$@"
+            set -- -f "$DIR/compose.yml" -f "$DIR/compose.uninotes.yml" "$@"
         else
-            set -- -f "$CONF/jupyter/compose.yml" "$@"
+            set -- -f "$DIR/compose.yml" "$@"
         fi
         ensure_dirs "$DATA/jupyter/notebooks" "$DATA/jupyter/conda-envs" \
                     "$HOME/.cache/huggingface" "$HOME/Downloads"
