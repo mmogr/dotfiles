@@ -105,6 +105,13 @@ jobs:
             echo "== $stack"
             "$HOME/.local/bin/podman-stack" "$stack" config > /dev/null
           done
+          # The uninotes overlay is merged only on machines that have the project.
+          if "$HOME/.local/bin/podman-stack" jupyter config | grep -q 'jovyan/uninotes'; then
+            echo "uninotes is mounted without the project being there"; exit 1
+          fi
+          test ! -e "$HOME/.local/src/uninotes"
+          mkdir -p "$HOME/.local/src/uninotes"
+          "$HOME/.local/bin/podman-stack" jupyter config | grep -q 'jovyan/uninotes'
 
   fresh-machine:
     name: "full setup on a bare ubuntu:26.04 (no TTY)"

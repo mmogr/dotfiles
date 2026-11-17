@@ -9,6 +9,7 @@
 #     podman machine (a VM) on macOS — see "Backend lifecycle" below
 #   - creates the stack's bind-mount source directories; host data lives under
 #     ~/.local/share and is never tracked
+#   - adds the uninotes overlay for jupyter when ~/.local/src/uninotes exists
 #
 # After a teardown (down, stop) on macOS it stops the podman machine again once
 # no container is left running. PODMAN_STACK_KEEP_MACHINE=1 skips that.
@@ -48,9 +49,15 @@ case "$STACK" in
         ensure_dirs "$DATA/dev-db/postgres" "$DATA/dev-db/mysql"
         ;;
     jupyter)
-        set -- -f "$CONF/jupyter/compose.yml" "$@"
+        # uninotes is a personal project: mount it where it is checked out,
+        # and never create it just to satisfy the mount.
+        if [ -d "$HOME/.local/src/uninotes" ]; then
+            set -- -f "$CONF/jupyter/compose.yml" -f "$CONF/jupyter/compose.uninotes.yml" "$@"
+        else
+            set -- -f "$CONF/jupyter/compose.yml" "$@"
+        fi
         ensure_dirs "$DATA/jupyter/notebooks" "$DATA/jupyter/conda-envs" \
-                    "$HOME/.cache/huggingface" "$HOME/.local/src/uninotes" "$HOME/Downloads"
+                    "$HOME/.cache/huggingface" "$HOME/Downloads"
         ;;
     *)
         echo "podman-stack: unknown stack '$STACK' (expected dev-db or jupyter)" >&2
