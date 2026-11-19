@@ -32,7 +32,7 @@ source $__fish_config_dir/functions/fish_greeting.fish
 
 source ~/.config/shell/aliases.sh
 
-# mise — tool version manager (node, rust, gh, lazygit, neovim, ...)
+# mise — tool version manager (node, gh, lazygit, neovim, ...)
 if test -x $HOME/.local/bin/mise
     $HOME/.local/bin/mise activate fish | source
 end

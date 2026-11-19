@@ -3,8 +3,12 @@
 # written by `just profile` and never tracked.
 #
 # Renovate opens the bump PRs: the aqua tools are pinned to exact versions and
-# node to a major, while rust follows stable. `just mise::upgrade` is the manual
-# path. The explicit aqua: backend names are what Renovate reads.
+# node to a major. `just mise::upgrade` is the manual path. The explicit aqua:
+# backend names are what Renovate reads.
+#
+# Rust is not here on purpose: rustup installs it (`just rust::install`). As a
+# mise tool it exported RUSTUP_TOOLCHAIN in every shell, which overrides a
+# project's rust-toolchain.toml, and it made a shim for everything in ~/.cargo/bin.
 #
 # neovim must be >= 0.12 for the vim.pack-based config in nvim/. If a release
 # ever lags behind what init.lua needs, switch it to "nightly".
@@ -13,7 +17,6 @@
 # tree-sitter CLI: nvim-treesitter builds every parser with it (needs 0.26.1 or newer)
 "aqua:tree-sitter/tree-sitter" = "0.27.2"
 node = "26"
-rust = "stable"
 "aqua:cli/cli" = "2.104.0"                 # gh
 "aqua:jesseduffield/lazygit" = "0.66.3"
 "aqua:direnv/direnv" = "2.38.2"

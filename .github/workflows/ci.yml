@@ -100,7 +100,34 @@ jobs:
           "$MISE" x -- lazygit --version
           "$MISE" x -- direnv --version
           "$MISE" x -- node --version
-          "$MISE" x -- cargo --version
+      - name: A machine set up while mise managed Rust gets it back
+        run: |
+          # Install Rust the way the old `rust = "stable"` did, so mise lays it out
+          # as it would on this runner. With rustup in ~/.cargo/bin (Ubuntu),
+          # installs/rust/stable is a link to ~/.cargo/bin and every binary there
+          # has a shim. With rustup from a package manager (macOS, Homebrew), the
+          # link points at that rustup and only its proxies have shims.
+          MISE="$HOME/.local/bin/mise"
+          DATA="$HOME/.local/share/mise"
+          fail() { echo "FAIL: $1"; ls -la "$DATA/installs/rust" "$DATA/shims" "$HOME/.cargo/bin" || true; exit 1; }
+          mkdir -p "$HOME/.cargo/bin"
+          printf '#!/bin/sh\n' > "$HOME/.cargo/bin/ci-probe"
+          chmod +x "$HOME/.cargo/bin/ci-probe"
+          "$MISE" install rust@stable
+          [ -e "$DATA/installs/rust/stable" ] || fail "mise did not install Rust"
+          [ -e "$DATA/shims/cargo" ] || fail "mise made no shim for cargo"
+          just rust::install
+          if [ -e "$DATA/installs/rust" ] || [ -L "$DATA/installs/rust" ]; then fail "mise still has installs/rust"; fi
+          for shim in cargo rustc rustup ci-probe; do
+            if [ -e "$DATA/shims/$shim" ] || [ -L "$DATA/shims/$shim" ]; then fail "mise still shims $shim"; fi
+          done
+          [ -x "$HOME/.cargo/bin/ci-probe" ] || fail "the recipe removed a binary from ~/.cargo/bin"
+          rm "$HOME/.cargo/bin/ci-probe"
+      - name: Rust runs from rustup, and mise names no toolchain
+        run: |
+          "$HOME/.cargo/bin/cargo" --version
+          "$HOME/.cargo/bin/rustup" default | grep '(default)'
+          if "$HOME/.local/bin/mise" env | grep RUSTUP_TOOLCHAIN; then echo "mise still sets RUSTUP_TOOLCHAIN"; exit 1; fi
       - name: Neovim starts, installs every pinned plugin, and reports no errors
         run: |
           "$HOME/.local/bin/mise" x -- nvim --headless -c 'luafile .github/nvim-smoke.lua'
@@ -154,11 +181,14 @@ jobs:
           test -f "$HOME/.config/mise/conf.d/local.toml"
           test -f "$HOME/.gitconfig-local"
           test -L "$HOME/.bashrc"
-      - name: Rust came up through mise with no pre-existing rustup
+      - name: Rust came up through rustup, and mise leaves it alone
         run: |
           MISE="$HOME/.local/bin/mise"
-          "$MISE" x -- cargo --version
-          "$MISE" x -- rustc --version
+          "$HOME/.cargo/bin/cargo" --version
+          "$HOME/.cargo/bin/rustc" --version
+          "$HOME/.cargo/bin/rustup" default | grep '(default)'
+          if "$MISE" env | grep RUSTUP_TOOLCHAIN; then echo "mise sets RUSTUP_TOOLCHAIN"; exit 1; fi
+          if [ -e "$HOME/.local/share/mise/shims/cargo" ]; then echo "mise shims cargo"; exit 1; fi
           "$MISE" x -- nvim --version | head -1
           "$MISE" x -- tree-sitter --version
           "$MISE" x -- node --version
