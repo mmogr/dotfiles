@@ -36,6 +36,7 @@ Adding a tool that needs installing: also add `modules/<tool>/mod.just` and a `m
 | `nvim` | `~/.config/nvim/` |
 | `dev-db` | `~/.config/dev-db/compose.yml` |
 | `jupyter` | `~/.config/jupyter/{Containerfile,compose.yml,compose.uninotes.yml,environment.yml}` |
+| `claude` | `~/.claude/skills/issue/SKILL.md` (`/issue <number>`: work an issue by the house contribution rules) |
 | `vscode` (desktop tier; source `vscode/agents/`) | macOS: `~/Library/Application Support/Code/User/prompts/*.agent.md`<br>Linux: `${XDG_CONFIG_HOME:-~/.config}/Code/User/prompts/*.agent.md` |
 
 `~/.bashrc` and `~/.zshrc` are thin: prompt, history, completion. Everything shared (PATH, conda,
