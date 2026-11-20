@@ -1,5 +1,5 @@
 # mise — tool version manager (https://mise.jdx.dev). Owns the CLI dev tools:
-#   node, rust, gh, lazygit, direnv, neovim, tree-sitter   (tracked: mise/.config/mise/config.toml)
+#   node, gh, lazygit, direnv, neovim, tree-sitter   (tracked: mise/.config/mise/config.toml)
 #   per-machine extras such as ruby           (~/.config/mise/conf.d/local.toml, from `just profile`)
 
 # Install the mise binary if missing, then every tool from the config files
@@ -14,9 +14,9 @@ install:
     echo "mise $("$MISE" --version)"
     . "{{justfile_directory()}}/lib/detect.sh"
     # Official Node >=26 Linux binaries link libatomic.so.1, which bare Debian/Ubuntu doesn't ship.
-    # Nor does it ship a C toolchain: rust needs one to link, and Neovim's plugins
-    # compile treesitter parsers and native helpers with cc and make. Arch has
-    # base-devel for the AUR and macOS has the command line tools Homebrew requires.
+    # Nor does it ship a C toolchain: Neovim's plugins compile treesitter parsers
+    # and native helpers with cc and make. Arch has base-devel for the AUR and
+    # macOS has the command line tools Homebrew requires.
     if [ "$OS" = debian ]; then
         $PM libatomic1 build-essential
     fi

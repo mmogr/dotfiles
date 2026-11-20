@@ -42,7 +42,7 @@ elif [ -x "$HOME/.local/bin/mise" ] && __direnv=$("$HOME/.local/bin/mise" which 
 fi
 unset __direnv
 
-# mise — tool version manager (node, rust, gh, lazygit, neovim, ...)
+# mise — tool version manager (node, gh, lazygit, neovim, ...)
 [ -x "$HOME/.local/bin/mise" ] && eval "$("$HOME/.local/bin/mise" activate "$__shell")"
 
 unset __shell

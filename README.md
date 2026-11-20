@@ -79,7 +79,7 @@ Local only (never tracked):
 
 | Tier | Always? | Installs |
 |---|---|---|
-| core | yes | fish, zsh, conda, mise + its tools (node, rust, gh, lazygit, direnv, neovim), git identity |
+| core | yes | fish, zsh, conda, mise + its tools (node, gh, lazygit, direnv, neovim), Rust via rustup, git identity |
 | Ruby | asked | `ruby = "3"` via mise (compiled from source, several minutes) |
 | desktop | asked | VS Code (+ agent files), Zed, JetBrains Toolbox |
 | containers | asked | podman (+ rootless socket, or a podman machine on macOS), JupyterLab image build (~15 min first time) |
@@ -88,8 +88,8 @@ Each tier is also a recipe: `just setup-core`, `just setup-desktop`, `just setup
 
 ## Tools managed by mise
 
-`mise/.config/mise/config.toml` sets node, rust, gh, lazygit, direnv, and neovim for every platform:
-exact versions, except node (pinned to a major) and rust (follows stable). This replaces per-distro
+`mise/.config/mise/config.toml` sets node, gh, lazygit, direnv, and neovim for every platform:
+exact versions, except node (pinned to a major). This replaces per-distro
 package names and keeps Neovim current on Ubuntu,
 whose packaged version is too old for the `vim.pack`-based config in `nvim/`.
 
@@ -101,6 +101,20 @@ Neovim must be 0.12 or newer. If a release ever lags behind what `init.lua` need
 `"aqua:neovim/neovim" = "nightly"` in the mise config.
 
 Shells, podman, conda, and GUI apps stay with the system package manager.
+
+## Rust
+
+Rust is installed by rustup, not mise, so a project's `rust-toolchain.toml` decides which toolchain
+runs there. As a mise tool it exported `RUSTUP_TOOLCHAIN` in every shell, which overrides that file,
+and every binary in `~/.cargo/bin` got a mise shim that failed once the binary was removed.
+
+- `just rust::install` — install rustup and the stable toolchain if missing. On a machine set up
+  while mise managed Rust, it also removes mise's link to rustup's binaries (`~/.cargo/bin`, or a
+  package manager's rustup) and the shims made from it. Run it once on each such machine after
+  pulling, then restart the shell. Where rustup came from Homebrew or pacman, the recipe still
+  installs one into `~/.cargo/bin`, since that is the directory the shell configs put on PATH; the
+  two share `~/.rustup`.
+- `just rust::upgrade` — update rustup and the stable toolchain
 
 ## Daily commands
 
@@ -146,8 +160,9 @@ Neovim with `:lua vim.pack.update()` and committed like any other change.
 
 Confirms the repo is clean and every stow package (plus the VS Code agents, once the desktop tier
 is installed) is correctly linked. CI runs the same check on Ubuntu and macOS, plus shellcheck, a
-fish syntax check, a mise install of the pinned tools, and a first start of Neovim that installs
-every plugin at its pinned revision and must report no errors.
+fish syntax check, a mise install of the pinned tools, a Rust install that has to take Rust back
+from mise, and a first start of Neovim that installs every plugin at its pinned revision and must
+report no errors.
 
 ## VS Code Rust tasks
 

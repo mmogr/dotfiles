@@ -20,6 +20,7 @@ mod jetbrains  'modules/jetbrains/mod.just'
 mod jupyter    'modules/jupyter/mod.just'
 mod mise       'modules/mise/mod.just'
 mod podman     'modules/podman/mod.just'
+mod rust       'modules/rust/mod.just'
 mod vscode     'modules/vscode/mod.just'
 mod zed        'modules/zed/mod.just'
 mod zsh        'modules/zsh/mod.just'
@@ -27,7 +28,7 @@ mod zsh        'modules/zsh/mod.just'
 # ── Setup ──────────────────────────────────────────────────────────────────────
 #
 # Tiers:
-#   core        every machine — shells, conda, mise-managed CLI tools, git identity
+#   core        every machine — shells, conda, mise-managed CLI tools, Rust, git identity
 #   desktop     VS Code, Zed, JetBrains Toolbox, VS Code agent files
 #   containers  podman, dev databases, JupyterLab image
 #
@@ -58,13 +59,14 @@ setup: stow-all
     echo ""
     echo "Setup complete. Restart your shell or run: exec \$SHELL"
 
-# Tier: every machine — shells, conda, mise tools (node, rust, gh, lazygit, direnv, neovim), git identity
+# Tier: every machine — shells, conda, mise tools (node, gh, lazygit, direnv, neovim), Rust via rustup, git identity
 setup-core:
     just fish::install
     just zsh::install
     just conda::install
     just conda::init
     just mise::install
+    just rust::install
     just git::init
 
 # Tier: VS Code (+ agent files), Zed, JetBrains Toolbox
@@ -107,7 +109,7 @@ profile:
             *)           echo "$2" ;;
         esac
     }
-    echo "Machine profile — core (shells, conda, mise tools incl. Rust, git) is always installed."
+    echo "Machine profile — core (shells, conda, mise tools, Rust, git) is always installed."
     RUBY=$(ask "Ruby via mise? (compiled from source, several minutes)" "$RUBY")
     DESKTOP=$(ask "Desktop apps? (VS Code, Zed, JetBrains Toolbox, VS Code agents)" "$DESKTOP")
     CONTAINERS=$(ask "Containers? (podman, dev databases, JupyterLab image)" "$CONTAINERS")
