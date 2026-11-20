@@ -32,4 +32,6 @@ Nothing is posted until I have read the exact text and said yes.
 
 The posted text is a comment on the issue, under my account, and it is short: a few plain paragraphs saying what is wrong or missing, what will change, and the pull requests in order. Ordinary sentences. No headings, no lists of files, no labels or tags, nothing about how it was worked out, and no credits of any kind. The detail stays here.
 
-Do not edit the issue's description, labels or state.
+When the note is posted, offer the labels the repository requires of an issue and this one still lacks, a size and a priority among them, and set each one I agree to.
+
+Do not edit the issue's description or state, or any other label.
