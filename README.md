@@ -101,6 +101,9 @@ whose packaged version is too old for the `vim.pack`-based config in `nvim/`.
 Neovim must be 0.12 or newer. If a release ever lags behind what `init.lua` needs, set
 `"aqua:neovim/neovim" = "nightly"` in the mise config.
 
+A project's `.nvmrc` or `.node-version` decides its Node, so a repo that pins Node 24 gets 24
+there and the config's version everywhere else. `mise install` in that project fetches it.
+
 Shells, podman, conda, and GUI apps stay with the system package manager.
 
 ## Rust
