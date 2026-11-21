@@ -21,3 +21,9 @@ node = "26"
 "aqua:jesseduffield/lazygit" = "0.66.3"
 "aqua:direnv/direnv" = "2.38.2"
 "aqua:neovim/neovim" = "0.12.6"
+
+[settings]
+# A project's .nvmrc or .node-version decides its Node, as its
+# rust-toolchain.toml decides its Rust. The node above is the version
+# everywhere else.
+idiomatic_version_file_enable_tools = ["node"]
